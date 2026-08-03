@@ -1,192 +1,387 @@
-/**
- * Tipos gerados a partir de `supabase/migrations/`. Formato compatível com
- * a saída de `supabase gen types typescript` (mesma forma de `Database`,
- * `Tables<>`, etc.) para que o comando oficial possa substituir este
- * arquivo sem quebrar nenhum import, assim que houver um projeto Supabase
- * real para apontar (`supabase gen types typescript --project-id <id>`).
- *
- * Escrito à mão nesta fase porque não há Docker disponível neste ambiente
- * para rodar Supabase localmente e gerar isto a partir de um Postgres de
- * verdade — mantenha em sincronia manual com as migrations até lá.
- *
- * Ainda não consumido pela aplicação (ver `src/lib/supabase.ts` — a troca
- * de `user_metadata` para estas tabelas é a próxima fase).
- */
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
-
-export type ExperienceStatus = "idea" | "scheduled" | "completed"
-export type SpaceMemberRole = "owner" | "member"
-
-export interface Database {
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.15"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
-      profiles: {
+      experience_images: {
         Row: {
-          id: string
-          email: string
-          display_name: string | null
           created_at: string
-          updated_at: string
-        }
-        Insert: {
+          experience_id: string
           id: string
-          email: string
-          display_name?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          email?: string
-          display_name?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      spaces: {
-        Row: {
-          id: string
-          name: string
-          owner_id: string
-          created_at: string
-          updated_at: string
+          position: number
+          storage_path: string
         }
         Insert: {
-          id?: string
-          name: string
-          owner_id: string
           created_at?: string
-          updated_at?: string
+          experience_id: string
+          id?: string
+          position?: number
+          storage_path: string
         }
         Update: {
-          id?: string
-          name?: string
-          owner_id?: string
           created_at?: string
-          updated_at?: string
+          experience_id?: string
+          id?: string
+          position?: number
+          storage_path?: string
         }
-      }
-      space_members: {
-        Row: {
-          space_id: string
-          profile_id: string
-          role: SpaceMemberRole
-          joined_at: string
-        }
-        Insert: {
-          space_id: string
-          profile_id: string
-          role?: SpaceMemberRole
-          joined_at?: string
-        }
-        Update: {
-          space_id?: string
-          profile_id?: string
-          role?: SpaceMemberRole
-          joined_at?: string
-        }
+        Relationships: [
+          {
+            foreignKeyName: "experience_images_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       experiences: {
         Row: {
-          id: string
-          space_id: string
-          title: string
           category: string
-          status: ExperienceStatus
-          favorite: boolean
-          created_by_id: string | null
-          created_at: string
-          updated_at: string
-          description: string | null
-          location: string | null
-          instagram: string | null
-          website: string | null
-          link: string | null
           city: string | null
-          notes: string | null
-          scheduled_date: string | null
           completed_at: string | null
-          rating: number | null
-        }
-        Insert: {
-          id?: string
-          space_id: string
-          title: string
-          category: string
-          status?: ExperienceStatus
-          favorite?: boolean
-          created_by_id?: string | null
-          created_at?: string
-          updated_at?: string
-          description?: string | null
-          location?: string | null
-          instagram?: string | null
-          website?: string | null
-          link?: string | null
-          city?: string | null
-          notes?: string | null
-          scheduled_date?: string | null
-          completed_at?: string | null
-          rating?: number | null
-        }
-        Update: {
-          id?: string
-          space_id?: string
-          title?: string
-          category?: string
-          status?: ExperienceStatus
-          favorite?: boolean
-          created_by_id?: string | null
-          created_at?: string
-          updated_at?: string
-          description?: string | null
-          location?: string | null
-          instagram?: string | null
-          website?: string | null
-          link?: string | null
-          city?: string | null
-          notes?: string | null
-          scheduled_date?: string | null
-          completed_at?: string | null
-          rating?: number | null
-        }
-      }
-      experience_images: {
-        Row: {
-          id: string
-          experience_id: string
-          storage_path: string
-          position: number
           created_at: string
+          created_by_id: string | null
+          description: string | null
+          favorite: boolean
+          id: string
+          instagram: string | null
+          link: string | null
+          location: string | null
+          notes: string | null
+          rating: number | null
+          scheduled_date: string | null
+          space_id: string
+          status: string
+          title: string
+          updated_at: string
+          website: string | null
         }
         Insert: {
-          id?: string
-          experience_id: string
-          storage_path: string
-          position?: number
+          category: string
+          city?: string | null
+          completed_at?: string | null
           created_at?: string
+          created_by_id?: string | null
+          description?: string | null
+          favorite?: boolean
+          id?: string
+          instagram?: string | null
+          link?: string | null
+          location?: string | null
+          notes?: string | null
+          rating?: number | null
+          scheduled_date?: string | null
+          space_id: string
+          status?: string
+          title: string
+          updated_at?: string
+          website?: string | null
         }
         Update: {
-          id?: string
-          experience_id?: string
-          storage_path?: string
-          position?: number
+          category?: string
+          city?: string | null
+          completed_at?: string | null
           created_at?: string
+          created_by_id?: string | null
+          description?: string | null
+          favorite?: boolean
+          id?: string
+          instagram?: string | null
+          link?: string | null
+          location?: string | null
+          notes?: string | null
+          rating?: number | null
+          scheduled_date?: string | null
+          space_id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          website?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "experiences_created_by_id_fkey"
+            columns: ["created_by_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "experiences_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          email: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          email: string
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          email?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      space_members: {
+        Row: {
+          joined_at: string
+          profile_id: string
+          role: string
+          space_id: string
+        }
+        Insert: {
+          joined_at?: string
+          profile_id: string
+          role?: string
+          space_id: string
+        }
+        Update: {
+          joined_at?: string
+          profile_id?: string
+          role?: string
+          space_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "space_members_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_members_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spaces: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spaces_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
+    Views: {
+      [_ in never]: never
+    }
     Functions: {
-      is_space_member: {
-        Args: { target_space_id: string }
-        Returns: boolean
-      }
+      is_space_member: { Args: { target_space_id: string }; Returns: boolean }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
     }
   }
 }
 
-type PublicSchema = Database["public"]
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
-export type Tables<T extends keyof PublicSchema["Tables"]> = PublicSchema["Tables"][T]["Row"]
-export type TablesInsert<T extends keyof PublicSchema["Tables"]> = PublicSchema["Tables"][T]["Insert"]
-export type TablesUpdate<T extends keyof PublicSchema["Tables"]> = PublicSchema["Tables"][T]["Update"]
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
+  public: {
+    Enums: {},
+  },
+} as const
