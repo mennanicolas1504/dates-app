@@ -10,7 +10,7 @@ export function OnboardingCreateSpacePage() {
   return (
     <OnboardingLayout
       title="Nome do espaço"
-      description='Exemplos: "Nicolas & Melissa", "Nosso espaço", "Our Dates".'
+      description='Exemplos: "Nosso espaço", "Encontros", "Datas especiais".'
       onBack={() => navigate(paths.onboarding)}
     >
       <CreateSpaceForm />

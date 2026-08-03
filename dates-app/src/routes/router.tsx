@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router-dom"
 
 import { AppLayout } from "@/components/layout/app-layout"
+import { AuthConfirmPage } from "@/pages/auth-confirm-page"
 import { ForgotPasswordPage } from "@/pages/forgot-password-page"
 import { HomePage } from "@/pages/home-page"
 import { IdeiasPage } from "@/pages/ideias-page"
@@ -33,6 +34,10 @@ export const router = createBrowserRouter([
   // Fora do RequireGuest de propósito: o link do e-mail cria uma sessão de
   // recuperação (o usuário já tem `user` setado nesse momento).
   { path: paths.resetPassword, element: <ResetPasswordPage /> },
+
+  // Fora do RequireGuest/RequireAuth de propósito: antes do verifyOtp
+  // resolver não existe sessão ainda, então nenhum dos dois guards se aplica.
+  { path: paths.authConfirm, element: <AuthConfirmPage /> },
 
   // A partir daqui, exige sessão.
   {

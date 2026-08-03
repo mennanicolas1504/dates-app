@@ -3,7 +3,6 @@ import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { updateSpaceName } from "@/features/space/api"
 import { toast } from "@/hooks/use-toast"
 import { useAuth } from "@/providers/auth-provider"
 
@@ -12,7 +11,7 @@ import { useAuth } from "@/providers/auth-provider"
  * descrição ficam para depois (ver ROADMAP.md / CLAUDE.md).
  */
 export function SpaceNameForm() {
-  const { space } = useAuth()
+  const { space, updateSpaceName } = useAuth()
   const [name, setName] = React.useState(space?.name ?? "")
   const [error, setError] = React.useState<string | null>(null)
   const [loading, setLoading] = React.useState(false)
@@ -46,7 +45,7 @@ export function SpaceNameForm() {
           id="space-settings-name"
           value={name}
           onChange={(event) => setName(event.target.value)}
-          placeholder="Nicolas & Melissa"
+          placeholder="Nosso espaço"
         />
       </div>
 

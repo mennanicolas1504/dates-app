@@ -3,10 +3,10 @@ import type { ReactNode } from "react"
 import type { Session, User } from "@supabase/supabase-js"
 
 import {
-  buildCreateSpaceMetadata,
-  getSpaceFromUser,
-  isOnboardingCompleted,
-} from "@/features/space/types"
+  createSpace as createSpaceInDb,
+  fetchSpaceForUser,
+  updateSpaceName as updateSpaceNameInDb,
+} from "@/features/space/api"
 import type { Space } from "@/features/space/types"
 import { supabase } from "@/lib/supabase"
 import { paths } from "@/routes/paths"
@@ -24,46 +24,91 @@ interface AuthContextValue {
   user: User | null
   /** O espaço do usuário — ver `features/space/types.ts`. `null` até o onboarding terminar. */
   space: Space | null
+  /** true quando existe pelo menos uma membership do usuário em `space_members`. */
   onboardingCompleted: boolean
-  /** true enquanto a sessão inicial ainda está sendo verificada. */
+  /** true enquanto a sessão inicial ou o espaço ainda estão sendo carregados. */
   loading: boolean
   signIn: (email: string, password: string) => Promise<AuthActionResult>
   signUp: (email: string, password: string) => Promise<SignUpResult>
   signOut: () => Promise<void>
   requestPasswordReset: (email: string) => Promise<AuthActionResult>
   updatePassword: (password: string) => Promise<AuthActionResult>
-  /** Cria o espaço e marca o onboarding como concluído (ver features/space/types.ts). */
+  /** Cria o espaço (spaces + space_members) e atualiza o estado local com o retorno do banco. */
   createSpace: (name: string) => Promise<AuthActionResult>
+  /** Atualiza o nome do espaço atual no banco e reflete o resultado localmente. */
+  updateSpaceName: (name: string) => Promise<AuthActionResult>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [sessionLoading, setSessionLoading] = useState(true)
+  const [space, setSpace] = useState<Space | null>(null)
+  const [spaceLoading, setSpaceLoading] = useState(true)
+  // `undefined` = "ainda não comparamos" (distinto de `null` = "comparamos
+  // e não há usuário logado"). Sem essa distinção de 3 estados, montar já
+  // deslogado (currentUserId null, estado inicial também null) nunca dispara
+  // o branch abaixo, e `spaceLoading` fica preso em `true` para sempre.
+  const [spaceUserId, setSpaceUserId] = useState<string | null | undefined>(undefined)
+
+  const user = session?.user ?? null
+
+  // Reseta o espaço em render (não em efeito) sempre que o usuário logado
+  // muda de identidade — evita "setState síncrono dentro de efeito" para o
+  // caso de logout/troca de conta. O efeito abaixo só dispara a busca
+  // assíncrona propriamente dita.
+  //
+  // `user?.id` é `undefined` quando deslogado; normalizar para `null` (não
+  // `undefined`) antes de comparar é essencial para não confundir esse valor
+  // com o sentinel "ainda não comparamos" acima.
+  const currentUserId = user?.id ?? null
+  if (currentUserId !== spaceUserId) {
+    setSpaceUserId(currentUserId)
+    setSpace(null)
+    setSpaceLoading(currentUserId !== null)
+  }
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session)
-      setLoading(false)
+      setSessionLoading(false)
     })
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession)
-      setLoading(false)
+      setSessionLoading(false)
     })
 
     return () => listener.subscription.unsubscribe()
   }, [])
 
-  const user = session?.user ?? null
+  // O espaço não vem mais de user_metadata (síncrono) — precisa de uma
+  // consulta própria a `space_members`/`spaces`, refeita sempre que o
+  // usuário logado muda (login, logout, troca de conta).
+  useEffect(() => {
+    if (!user) return
+
+    let cancelled = false
+
+    fetchSpaceForUser(user.id).then(({ space: fetchedSpace }) => {
+      if (!cancelled) {
+        setSpace(fetchedSpace)
+        setSpaceLoading(false)
+      }
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [user])
 
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
-      space: getSpaceFromUser(user),
-      onboardingCompleted: isOnboardingCompleted(user),
-      loading,
+      space,
+      onboardingCompleted: space !== null,
+      loading: sessionLoading || spaceLoading,
 
       signIn: async (email, password) => {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
@@ -95,13 +140,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
 
       createSpace: async (name) => {
-        const { error } = await supabase.auth.updateUser({
-          data: buildCreateSpaceMetadata(name),
-        })
-        return { error: error?.message ?? null }
+        if (!user) return { error: "Sessão inválida." }
+
+        const { space: createdSpace, error } = await createSpaceInDb(name, user.id)
+        if (error) return { error }
+
+        setSpace(createdSpace)
+        return { error: null }
+      },
+
+      updateSpaceName: async (name) => {
+        if (!space) return { error: "Nenhum espaço para atualizar." }
+
+        const { error } = await updateSpaceNameInDb(space.id, name)
+        if (error) return { error }
+
+        setSpace({ ...space, name })
+        return { error: null }
       },
     }),
-    [user, loading],
+    [user, space, sessionLoading, spaceLoading],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

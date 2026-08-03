@@ -43,7 +43,7 @@ export function CreateSpaceForm() {
           autoFocus
           value={name}
           onChange={(event) => setName(event.target.value)}
-          placeholder="Nicolas & Melissa"
+          placeholder="Nosso espaço"
         />
       </div>
 

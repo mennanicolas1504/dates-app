@@ -7,6 +7,7 @@ export const paths = {
   signup: "/cadastro",
   forgotPassword: "/esqueci-senha",
   resetPassword: "/redefinir-senha",
+  authConfirm: "/auth/confirmar",
 
   onboarding: "/onboarding",
   onboardingCreateSpace: "/onboarding/criar-espaco",
