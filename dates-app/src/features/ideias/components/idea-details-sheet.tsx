@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/sheet"
 import type { Idea } from "@/features/ideias/types"
 import { useSignedMediaUrls } from "@/hooks/use-signed-media-urls"
-import { formatShortDate } from "@/lib/date"
+import { formatShortDate, formatShortDateTime } from "@/lib/date"
 import { listMedia } from "@/lib/media/api"
 import type { MediaRecord } from "@/lib/media/types"
 
@@ -94,8 +94,8 @@ export function IdeaDetailsSheet({ idea, open, onOpenChange }: IdeaDetailsSheetP
 
             <DetailField label="Descrição" value={idea.description} />
             <DetailField
-              label="Data agendada"
-              value={idea.scheduledDate ? formatShortDate(new Date(idea.scheduledDate)) : undefined}
+              label="Planejada para"
+              value={idea.scheduledDate ? formatShortDateTime(new Date(idea.scheduledDate)) : undefined}
             />
 
             <DetailField label="Local" value={idea.location} />

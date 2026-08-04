@@ -7,10 +7,11 @@ import { PageTitle } from "@/components/common/page-title"
 import { SkeletonList } from "@/components/common/skeletons"
 import { Typography } from "@/components/common/typography"
 import {
+  cancelExperiencePlan,
   createExperience,
   deleteExperience,
   fetchExperiencesForSpace,
-  scheduleExperience,
+  planExperience,
   updateExperienceDetails,
   updateExperienceFavorite,
 } from "@/features/ideias/api"
@@ -19,7 +20,7 @@ import { IdeaDetailsSheet } from "@/features/ideias/components/idea-details-shee
 import { IdeasList } from "@/features/ideias/components/ideas-list"
 import { IdeasToolbar, type IdeasSortOption } from "@/features/ideias/components/ideas-toolbar"
 import { NewIdeaDialog } from "@/features/ideias/components/new-idea-dialog"
-import { ScheduleDialog } from "@/features/ideias/components/schedule-dialog"
+import { PlanDialog, type PlanConfirmValues } from "@/features/ideias/components/plan-dialog"
 import { SuggestionsDialog } from "@/features/ideias/components/suggestions-dialog"
 import type { Idea, NewIdeaFormValues } from "@/features/ideias/types"
 import { toast } from "@/hooks/use-toast"
@@ -68,13 +69,13 @@ export function IdeiasPage() {
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [detailsIdea, setDetailsIdea] = useState<Idea | null>(null)
 
-  const [scheduleTarget, setScheduleTarget] = useState<Idea | null>(null)
-  const [scheduling, setScheduling] = useState(false)
+  const [planTarget, setPlanTarget] = useState<Idea | null>(null)
+  const [planning, setPlanning] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Idea | null>(null)
   const [deleting, setDeleting] = useState(false)
 
-  // Ids com alguma ação assíncrona em voo (favoritar/agendar/excluir) —
-  // desabilita as ações da linha correspondente enquanto isso.
+  // Ids com alguma ação assíncrona em voo (favoritar/cancelar planejamento/
+  // excluir) — desabilita as ações da linha correspondente enquanto isso.
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set())
 
   // Primeira foto de cada ideia, para a miniatura na lista — uma consulta
@@ -310,32 +311,63 @@ export function IdeiasPage() {
     setDetailsOpen(true)
   }
 
-  const handleRequestSchedule = (id: string) => {
+  const handleRequestPlan = (id: string) => {
     const idea = ideas.find((item) => item.id === id)
-    if (idea) setScheduleTarget(idea)
+    if (idea) setPlanTarget(idea)
   }
 
-  const handleConfirmSchedule = async (date: Date) => {
-    if (!scheduleTarget) return
-    const id = scheduleTarget.id
-    const scheduledDate = date.toISOString()
+  const handleConfirmPlan = async (values: PlanConfirmValues) => {
+    if (!planTarget) return
+    const id = planTarget.id
+    const wasAlreadyPlanned = planTarget.status === "scheduled"
+    const scheduledDate = values.scheduledDate.toISOString()
 
-    setScheduling(true)
-    const { error } = await scheduleExperience(id, scheduledDate)
-    setScheduling(false)
+    setPlanning(true)
+    const { error } = await planExperience(id, {
+      scheduledDate,
+      location: values.location,
+      notes: values.notes,
+    })
+    setPlanning(false)
 
     if (error) {
-      toast.error({ title: "Não foi possível agendar", description: error })
+      toast.error({ title: "Não foi possível planejar", description: error })
       return
     }
 
     setIdeas((prev) =>
       prev.map((idea) =>
-        idea.id === id ? { ...idea, status: "scheduled", scheduledDate } : idea,
+        idea.id === id
+          ? {
+              ...idea,
+              status: "scheduled",
+              scheduledDate,
+              location: values.location || undefined,
+              notes: values.notes || undefined,
+            }
+          : idea,
       ),
     )
-    toast.success({ title: "Ideia agendada" })
-    setScheduleTarget(null)
+    toast.success({ title: wasAlreadyPlanned ? "Planejamento atualizado" : "Ideia planejada" })
+    setPlanTarget(null)
+  }
+
+  const handleCancelPlan = async (id: string) => {
+    markPending(id, true)
+    const { error } = await cancelExperiencePlan(id)
+    markPending(id, false)
+
+    if (error) {
+      toast.error({ title: "Não foi possível cancelar o planejamento", description: error })
+      return
+    }
+
+    setIdeas((prev) =>
+      prev.map((idea) =>
+        idea.id === id ? { ...idea, status: "idea", scheduledDate: undefined } : idea,
+      ),
+    )
+    toast.success({ title: "Planejamento cancelado" })
   }
 
   const handleRequestDelete = (id: string) => {
@@ -401,7 +433,8 @@ export function IdeiasPage() {
           onOpenSuggestions={() => setSuggestionsOpen(true)}
           onToggleFavorite={handleToggleFavorite}
           onOpenDetails={handleOpenDetails}
-          onSchedule={handleRequestSchedule}
+          onPlan={handleRequestPlan}
+          onCancelPlan={handleCancelPlan}
           onEdit={handleOpenEdit}
           onDelete={handleRequestDelete}
           pendingIds={pendingIds}
@@ -433,12 +466,12 @@ export function IdeiasPage() {
 
       <IdeaDetailsSheet idea={detailsIdea} open={detailsOpen} onOpenChange={setDetailsOpen} />
 
-      <ScheduleDialog
-        idea={scheduleTarget}
-        open={scheduleTarget !== null}
-        onOpenChange={(open) => !open && !scheduling && setScheduleTarget(null)}
-        onConfirm={handleConfirmSchedule}
-        submitting={scheduling}
+      <PlanDialog
+        idea={planTarget}
+        open={planTarget !== null}
+        onOpenChange={(open) => !open && !planning && setPlanTarget(null)}
+        onConfirm={handleConfirmPlan}
+        submitting={planning}
       />
 
       <ConfirmDialog

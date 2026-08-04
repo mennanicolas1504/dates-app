@@ -117,14 +117,46 @@ export async function updateExperienceFavorite(
   return { error: error?.message ?? null }
 }
 
-/** Agendar sempre muda o status para "scheduled" — não existe reagendar sem status ligado à data. */
-export async function scheduleExperience(
+export interface PlanExperienceInput {
+  scheduledDate: string
+  location: string
+  notes: string
+}
+
+/**
+ * Planejar sempre muda o status para "scheduled" — cobre tanto planejar
+ * pela primeira vez quanto editar um planejamento existente (mesma
+ * operação: só um `update`, sem estado intermediário). `location`/`notes`
+ * são os mesmos campos que a Ideia já usa (ver `experienceInsertValues`) —
+ * planejar não duplica esses dados, só os edita a partir de outra tela.
+ */
+export async function planExperience(
   id: string,
-  scheduledDate: string,
+  input: PlanExperienceInput,
 ): Promise<ExperienceActionResult> {
   const { error } = await supabase
     .from("experiences")
-    .update({ status: "scheduled", scheduled_date: scheduledDate })
+    .update({
+      status: "scheduled",
+      scheduled_date: input.scheduledDate,
+      location: input.location || null,
+      notes: input.notes || null,
+    })
+    .eq("id", id)
+
+  return { error: error?.message ?? null }
+}
+
+/**
+ * Volta a Ideia para o estágio inicial. Só `status` e `scheduled_date` são
+ * limpos — `location`/`notes` continuam como dados válidos da Ideia, não
+ * são exclusivos do planejamento (ver `PlanDialog`, que os edita nos dois
+ * estágios usando os mesmos campos).
+ */
+export async function cancelExperiencePlan(id: string): Promise<ExperienceActionResult> {
+  const { error } = await supabase
+    .from("experiences")
+    .update({ status: "idea", scheduled_date: null })
     .eq("id", id)
 
   return { error: error?.message ?? null }

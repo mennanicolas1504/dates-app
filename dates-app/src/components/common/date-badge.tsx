@@ -19,7 +19,7 @@ const statusConfig: Record<DateBadgeStatus, StatusConfig> = {
     className: "",
   },
   scheduled: {
-    label: "Agendada",
+    label: "Planejada",
     icon: CalendarClock,
     className: "",
   },

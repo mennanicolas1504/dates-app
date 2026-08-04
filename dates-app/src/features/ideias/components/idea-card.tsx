@@ -1,5 +1,5 @@
 import { motion } from "framer-motion"
-import { CalendarPlus, MoreHorizontal, Pencil, Star, Trash2 } from "lucide-react"
+import { CalendarClock, CalendarPlus, CalendarX, MoreHorizontal, Pencil, Star, Trash2 } from "lucide-react"
 
 import { CategoryBadge } from "@/components/common/category-badge"
 import { DateBadge } from "@/components/common/date-badge"
@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { formatShortDate } from "@/lib/date"
+import { formatShortDate, formatShortDateTime } from "@/lib/date"
 import { DURATION } from "@/lib/motion"
 import { cn } from "@/lib/utils"
 import type { Idea } from "@/features/ideias/types"
@@ -21,7 +21,9 @@ interface IdeaCardProps {
   idea: Idea
   onToggleFavorite?: (id: string) => void
   onOpenDetails?: (id: string) => void
-  onSchedule?: (id: string) => void
+  /** Abre o `PlanDialog` — cobre tanto planejar quanto editar um planejamento existente. */
+  onPlan?: (id: string) => void
+  onCancelPlan?: (id: string) => void
   onEdit?: (id: string) => void
   onDelete?: (id: string) => void
   className?: string
@@ -34,7 +36,7 @@ interface IdeaCardProps {
 /**
  * Linha compacta de ideia — não um card de catálogo. Em repouso mostra só o
  * essencial (título, categoria, quem/quando); estado "Ideia" (o padrão) não
- * ganha badge própria, só desvios dele (Agendada/Concluída). Favorito só
+ * ganha badge própria, só desvios dele (Planejada/Concluída). Favorito só
  * aparece sempre quando já é favorito — senão só ao passar o mouse — para
  * não poluir a maioria das linhas com um ícone vazio. Ver UX_ARCHITECTURE.md.
  */
@@ -42,17 +44,21 @@ export function IdeaCard({
   idea,
   onToggleFavorite,
   onOpenDetails,
-  onSchedule,
+  onPlan,
+  onCancelPlan,
   onEdit,
   onDelete,
   className,
   pending = false,
   thumbnailUrl,
 }: IdeaCardProps) {
+  const isPlanned = idea.status === "scheduled"
+
   const meta = [
-    idea.status === "scheduled" && idea.scheduledDate
-      ? `Agendada p/ ${formatShortDate(new Date(idea.scheduledDate))}`
+    isPlanned && idea.scheduledDate
+      ? `Planejada p/ ${formatShortDateTime(new Date(idea.scheduledDate))}`
       : null,
+    idea.location,
     idea.notes,
     `Por ${idea.createdBy}`,
     formatShortDate(new Date(idea.createdAt)),
@@ -113,14 +119,18 @@ export function IdeaCard({
               <Button
                 variant="ghost"
                 size="icon-sm"
-                aria-label="Agendar"
+                aria-label={isPlanned ? "Editar planejamento" : "Planejar"}
                 disabled={pending}
-                onClick={() => onSchedule?.(idea.id)}
+                onClick={() => onPlan?.(idea.id)}
               >
-                <CalendarPlus className="size-4" strokeWidth={1.75} />
+                {isPlanned ? (
+                  <CalendarClock className="size-4" strokeWidth={1.75} />
+                ) : (
+                  <CalendarPlus className="size-4" strokeWidth={1.75} />
+                )}
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Agendar</TooltipContent>
+            <TooltipContent>{isPlanned ? "Editar planejamento" : "Planejar"}</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -145,10 +155,20 @@ export function IdeaCard({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onSchedule?.(idea.id)}>
-              <CalendarPlus data-icon="inline-start" />
-              Agendar
+            <DropdownMenuItem onClick={() => onPlan?.(idea.id)}>
+              {isPlanned ? (
+                <CalendarClock data-icon="inline-start" />
+              ) : (
+                <CalendarPlus data-icon="inline-start" />
+              )}
+              {isPlanned ? "Editar planejamento" : "Planejar"}
             </DropdownMenuItem>
+            {isPlanned && (
+              <DropdownMenuItem onClick={() => onCancelPlan?.(idea.id)}>
+                <CalendarX data-icon="inline-start" />
+                Cancelar planejamento
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onClick={() => onEdit?.(idea.id)}>
               <Pencil data-icon="inline-start" />
               Editar

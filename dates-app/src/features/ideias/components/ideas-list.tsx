@@ -17,10 +17,11 @@ interface IdeasListProps {
   onOpenSuggestions?: () => void
   onToggleFavorite?: (id: string) => void
   onOpenDetails?: (id: string) => void
-  onSchedule?: (id: string) => void
+  onPlan?: (id: string) => void
+  onCancelPlan?: (id: string) => void
   onEdit?: (id: string) => void
   onDelete?: (id: string) => void
-  /** Ids com alguma ação assíncrona em voo (favoritar/agendar/excluir). */
+  /** Ids com alguma ação assíncrona em voo (favoritar/planejar/excluir). */
   pendingIds?: ReadonlySet<string>
   /** Signed URL da primeira foto de cada ideia, já resolvida (ver `IdeiasPage`). */
   thumbnailUrls?: ReadonlyMap<string, string>
@@ -39,7 +40,8 @@ export function IdeasList({
   onOpenSuggestions,
   onToggleFavorite,
   onOpenDetails,
-  onSchedule,
+  onPlan,
+  onCancelPlan,
   onEdit,
   onDelete,
   pendingIds,
@@ -72,7 +74,8 @@ export function IdeasList({
             idea={idea}
             onToggleFavorite={onToggleFavorite}
             onOpenDetails={onOpenDetails}
-            onSchedule={onSchedule}
+            onPlan={onPlan}
+            onCancelPlan={onCancelPlan}
             onEdit={onEdit}
             onDelete={onDelete}
             pending={pendingIds?.has(idea.id)}

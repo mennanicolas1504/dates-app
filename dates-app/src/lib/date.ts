@@ -28,6 +28,27 @@ export function formatShortDate(date: Date): string {
   return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(date)
 }
 
+export function formatShortTime(date: Date): string {
+  return new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" }).format(date)
+}
+
+export function formatShortDateTime(date: Date): string {
+  return `${formatShortDate(date)}, ${formatShortTime(date)}`
+}
+
+/** `time` no formato "HH:mm" (valor nativo de `<input type="time">`). */
+export function combineDateAndTime(date: Date, time: string): Date {
+  const [hours, minutes] = time.split(":").map(Number)
+  const combined = new Date(date)
+  combined.setHours(hours || 0, minutes || 0, 0, 0)
+  return combined
+}
+
+/** Inverso de `combineDateAndTime` — extrai "HH:mm" no fuso local para preencher o input de hora. */
+export function toTimeInputValue(date: Date): string {
+  return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`
+}
+
 export function getWeekdayLabels(): readonly string[] {
   return WEEKDAY_LABELS
 }
