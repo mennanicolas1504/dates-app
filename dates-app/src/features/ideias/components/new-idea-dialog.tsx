@@ -1,6 +1,6 @@
 import * as React from "react"
 import { AnimatePresence, motion } from "framer-motion"
-import { Check, ChevronDown, ImagePlus, Plus, X } from "lucide-react"
+import { Check, ChevronDown, Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -21,10 +21,18 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { MediaDropzone } from "@/components/common/media/media-dropzone"
+import { MediaPreviewGrid } from "@/components/common/media/media-preview-grid"
 import { IDEA_CATEGORIES } from "@/features/ideias/data/categories"
 import type { NewIdeaFormValues } from "@/features/ideias/types"
+import { useMediaUpload } from "@/hooks/use-media-upload"
+import { deleteMedia, reorderMedia } from "@/lib/media/api"
+import { constraintsFor } from "@/lib/media/constraints"
+import type { MediaRecord } from "@/lib/media/types"
 import { transition } from "@/lib/motion"
 import { cn } from "@/lib/utils"
+
+const IDEA_MEDIA_CONSTRAINTS = constraintsFor("idea")
 
 const EMPTY_VALUES: NewIdeaFormValues = {
   title: "",
@@ -36,7 +44,6 @@ const EMPTY_VALUES: NewIdeaFormValues = {
   link: "",
   city: "",
   notes: "",
-  images: [],
 }
 
 interface NewIdeaDialogProps {
@@ -47,6 +54,23 @@ interface NewIdeaDialogProps {
   onSubmit: (values: NewIdeaFormValues) => void
   /** "edit" reaproveita o mesmo formulário para alterar uma ideia existente. */
   mode?: "create" | "edit"
+  /** true enquanto o submit está em voo — desabilita o form e mostra loading no botão. */
+  submitting?: boolean
+  spaceId: string
+  createdById: string
+  /**
+   * Id da própria ideia — dono das fotos no Sistema de Mídia (`kind: "idea"`).
+   * `null` só na criação, antes do primeiro "Criar ideia" bem-sucedido: sem
+   * um id persistido ainda não há onde anexar fotos (ver `IdeiasPage`, que
+   * troca isto por um id real assim que a criação termina, sem fechar o
+   * diálogo — é o que libera a seção de fotos no meio da mesma sessão).
+   */
+  resourceId: string | null
+  /** Fotos já persistidas desta ideia. */
+  media: MediaRecord[]
+  onMediaUploaded: (media: MediaRecord) => void
+  onMediaRemoved: (mediaId: string) => void
+  onMediaReordered: (updates: { id: string; position: number }[]) => void
 }
 
 function hasExtraDetails(values: NewIdeaFormValues): boolean {
@@ -57,8 +81,7 @@ function hasExtraDetails(values: NewIdeaFormValues): boolean {
       values.website ||
       values.link ||
       values.city ||
-      values.notes ||
-      values.images.length > 0,
+      values.notes,
   )
 }
 
@@ -74,10 +97,17 @@ export function NewIdeaDialog({
   initialValues,
   onSubmit,
   mode = "create",
+  submitting = false,
+  spaceId,
+  createdById,
+  resourceId,
+  media,
+  onMediaUploaded,
+  onMediaRemoved,
+  onMediaReordered,
 }: NewIdeaDialogProps) {
   const [values, setValues] = React.useState<NewIdeaFormValues>(EMPTY_VALUES)
   const [showMore, setShowMore] = React.useState(false)
-  const [imageDraft, setImageDraft] = React.useState("")
 
   // Reseta o formulário sempre que o diálogo abre. Ajuste de estado durante
   // a renderização (guardado pela comparação com o render anterior), não
@@ -89,35 +119,45 @@ export function NewIdeaDialog({
       const next = { ...EMPTY_VALUES, ...initialValues }
       setValues(next)
       setShowMore(hasExtraDetails(next))
-      setImageDraft("")
     }
   }
 
-  const canSubmit = values.title.trim().length > 0 && values.category.length > 0
+  const canSubmit = values.title.trim().length > 0 && values.category.length > 0 && !submitting
 
   function update<K extends keyof NewIdeaFormValues>(key: K, value: NewIdeaFormValues[K]) {
     setValues((prev) => ({ ...prev, [key]: value }))
   }
 
-  function handleAddImage() {
-    const url = imageDraft.trim()
-    if (!url) return
-    update("images", [...values.images, url])
-    setImageDraft("")
+  // Upload é imediato (não fica atrás do botão "Salvar") — cada foto some
+  // da fila do hook assim que persiste (ver `use-media-upload.ts`) e passa
+  // a viver em `media`, que a página mantém. `resourceId` só é real depois
+  // da ideia já existir; até lá o dropzone fica desabilitado (ver abaixo).
+  const { items: uploadItems, addFiles, retry, remove } = useMediaUpload({
+    kind: "idea",
+    spaceId,
+    resourceId: resourceId ?? "",
+    createdById,
+    existingCount: media.length,
+    onUploaded: onMediaUploaded,
+  })
+
+  async function handleRemoveMedia(item: MediaRecord) {
+    await deleteMedia(item)
+    onMediaRemoved(item.id)
   }
 
-  function handleRemoveImage(index: number) {
-    update(
-      "images",
-      values.images.filter((_, i) => i !== index),
-    )
+  async function handleReorderMedia(updates: { id: string; position: number }[]) {
+    await reorderMedia(updates)
+    onMediaReordered(updates)
   }
 
+  // Não fecha o diálogo aqui: quem decide é a página, depois que a chamada
+  // ao Supabase resolver — se der erro, o diálogo continua aberto (com os
+  // valores preenchidos) para o usuário tentar de novo.
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
     if (!canSubmit) return
     onSubmit(values)
-    onOpenChange(false)
   }
 
   return (
@@ -161,6 +201,37 @@ export function NewIdeaDialog({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label>Fotos</Label>
+            {resourceId ? (
+              <>
+                <MediaDropzone
+                  multiple
+                  accept={IDEA_MEDIA_CONSTRAINTS.allowedMimeTypes.join(",")}
+                  disabled={
+                    IDEA_MEDIA_CONSTRAINTS.maxCount !== null &&
+                    media.length + uploadItems.length >= IDEA_MEDIA_CONSTRAINTS.maxCount
+                  }
+                  onFilesSelected={addFiles}
+                  label="Adicionar fotos"
+                  hint={`Até ${IDEA_MEDIA_CONSTRAINTS.maxCount} fotos`}
+                />
+                <MediaPreviewGrid
+                  media={media}
+                  uploadItems={uploadItems}
+                  onRemoveMedia={handleRemoveMedia}
+                  onRemoveUploadItem={remove}
+                  onRetryUploadItem={retry}
+                  onReorder={handleReorderMedia}
+                />
+              </>
+            ) : (
+              <p className="rounded-lg border border-dashed border-border bg-muted/30 px-3 py-4 text-center text-xs text-muted-foreground">
+                Salve a ideia primeiro para adicionar fotos.
+              </p>
+            )}
           </div>
 
           <Button
@@ -256,64 +327,21 @@ export function NewIdeaDialog({
                     />
                   </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="idea-image">Imagens</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="idea-image"
-                        value={imageDraft}
-                        onChange={(event) => setImageDraft(event.target.value)}
-                        placeholder="URL de uma imagem"
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
-                            event.preventDefault()
-                            handleAddImage()
-                          }
-                        }}
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={handleAddImage}
-                        disabled={!imageDraft.trim()}
-                        aria-label="Adicionar imagem"
-                      >
-                        <ImagePlus className="size-4" strokeWidth={1.75} />
-                      </Button>
-                    </div>
-
-                    {values.images.length > 0 && (
-                      <div className="flex flex-wrap gap-2 pt-1">
-                        {values.images.map((url, index) => (
-                          <div
-                            key={`${url}-${index}`}
-                            className="group relative size-12 overflow-hidden rounded-md ring-1 ring-foreground/10"
-                          >
-                            <img src={url} alt="" className="size-full object-cover" />
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveImage(index)}
-                              className="absolute inset-0 flex items-center justify-center bg-black/0 text-transparent transition-colors group-hover:bg-black/50 group-hover:text-white"
-                              aria-label="Remover imagem"
-                            >
-                              <X className="size-4" strokeWidth={2} />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={submitting}
+              onClick={() => onOpenChange(false)}
+            >
               Cancelar
             </Button>
-            <Button type="submit" disabled={!canSubmit}>
+            <Button type="submit" disabled={!canSubmit} loading={submitting}>
               {mode === "edit" ? (
                 <Check data-icon="inline-start" />
               ) : (

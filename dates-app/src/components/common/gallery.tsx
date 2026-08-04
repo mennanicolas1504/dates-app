@@ -1,8 +1,10 @@
 import * as React from "react"
+import { AnimatePresence, motion, type PanInfo } from "framer-motion"
 import { ChevronLeft, ChevronRight, Eye, Image as ImageIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { transition } from "@/lib/motion"
 import { cn } from "@/lib/utils"
 
 export interface GalleryImage {
@@ -53,6 +55,7 @@ export function Gallery({
           <img
             src={images[0].src}
             alt={images[0].alt}
+            loading="lazy"
             className="aspect-video w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
           />
         </button>
@@ -74,6 +77,7 @@ export function Gallery({
             <img
               src={image.src}
               alt={image.alt}
+              loading="lazy"
               className="size-full object-cover transition-transform duration-200 group-hover:scale-[1.05]"
             />
             <span className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all duration-150 group-hover:bg-black/20 group-hover:opacity-100">
@@ -93,23 +97,60 @@ interface GalleryPreviewProps {
   onIndexChange: (index: number | null) => void
 }
 
+const SWIPE_THRESHOLD = 60
+
+/**
+ * Visualização em tela cheia — troca de foto com swipe (arrastar
+ * horizontalmente, via Framer Motion, mesma lib de animação já usada em
+ * todo o app) ou pelos botões/setas do teclado. `AnimatePresence
+ * mode="wait"` dá a transição suave entre fotos (nunca duas sobrepostas).
+ */
 function GalleryPreview({ images, index, onIndexChange }: GalleryPreviewProps) {
   const open = index !== null
   const image = index !== null ? images[index] : null
   const hasPrev = index !== null && index > 0
   const hasNext = index !== null && index < images.length - 1
 
+  function handleDragEnd(_event: PointerEvent | MouseEvent | TouchEvent, info: PanInfo) {
+    if (index === null) return
+    if (info.offset.x < -SWIPE_THRESHOLD && hasNext) onIndexChange(index + 1)
+    else if (info.offset.x > SWIPE_THRESHOLD && hasPrev) onIndexChange(index - 1)
+  }
+
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onIndexChange(null)}>
-      <DialogContent className="max-w-2xl gap-3 p-2 sm:max-w-2xl">
+      <DialogContent
+        className="max-w-2xl gap-3 overflow-hidden p-2 sm:max-w-2xl"
+        onKeyDown={(event) => {
+          if (index === null) return
+          if (event.key === "ArrowLeft" && hasPrev) onIndexChange(index - 1)
+          if (event.key === "ArrowRight" && hasNext) onIndexChange(index + 1)
+        }}
+      >
         <DialogTitle className="sr-only">{image?.alt || "Visualização da imagem"}</DialogTitle>
-        {image && (
-          <img
-            src={image.src}
-            alt={image.alt}
-            className="max-h-[70vh] w-full rounded-lg object-contain"
-          />
-        )}
+
+        <div className="relative max-h-[70vh] w-full overflow-hidden rounded-lg">
+          <AnimatePresence mode="wait" initial={false}>
+            {image && (
+              <motion.img
+                key={index}
+                src={image.src}
+                alt={image.alt}
+                drag={images.length > 1 ? "x" : false}
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.6}
+                onDragEnd={handleDragEnd}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={transition}
+                className="max-h-[70vh] w-full touch-pan-y object-contain select-none"
+                draggable={false}
+              />
+            )}
+          </AnimatePresence>
+        </div>
+
         {images.length > 1 && index !== null && (
           <div className="flex items-center justify-between px-1">
             <Button

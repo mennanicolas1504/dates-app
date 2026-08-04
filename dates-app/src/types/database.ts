@@ -152,6 +152,75 @@ export type Database = {
           },
         ]
       }
+      media: {
+        Row: {
+          created_at: string
+          created_by_id: string | null
+          height: number | null
+          id: string
+          kind: string
+          media_type: string
+          mime_type: string
+          position: number
+          resource_id: string
+          size_bytes: number
+          space_id: string | null
+          storage_bucket: string
+          storage_path: string
+          updated_at: string
+          width: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by_id?: string | null
+          height?: number | null
+          id?: string
+          kind: string
+          media_type?: string
+          mime_type: string
+          position?: number
+          resource_id: string
+          size_bytes: number
+          space_id?: string | null
+          storage_bucket: string
+          storage_path: string
+          updated_at?: string
+          width?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by_id?: string | null
+          height?: number | null
+          id?: string
+          kind?: string
+          media_type?: string
+          mime_type?: string
+          position?: number
+          resource_id?: string
+          size_bytes?: number
+          space_id?: string | null
+          storage_bucket?: string
+          storage_path?: string
+          updated_at?: string
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_created_by_id_fkey"
+            columns: ["created_by_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "media_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -250,6 +319,7 @@ export type Database = {
     }
     Functions: {
       is_space_member: { Args: { target_space_id: string }; Returns: boolean }
+      is_space_owner: { Args: { target_space_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

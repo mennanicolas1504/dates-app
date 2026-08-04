@@ -18,10 +18,17 @@ interface ScheduleDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onConfirm: (date: Date) => void
+  submitting?: boolean
 }
 
 /** Escolher (ou trocar) a data de uma ideia — muda o estado para "Agendada". */
-export function ScheduleDialog({ idea, open, onOpenChange, onConfirm }: ScheduleDialogProps) {
+export function ScheduleDialog({
+  idea,
+  open,
+  onOpenChange,
+  onConfirm,
+  submitting = false,
+}: ScheduleDialogProps) {
   const [selected, setSelected] = React.useState<Date | null>(null)
 
   const [wasOpen, setWasOpen] = React.useState(open)
@@ -45,10 +52,14 @@ export function ScheduleDialog({ idea, open, onOpenChange, onConfirm }: Schedule
         <Calendar selected={selected} onSelectDate={setSelected} />
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" disabled={submitting} onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button disabled={!selected} onClick={() => selected && onConfirm(selected)}>
+          <Button
+            disabled={!selected || submitting}
+            loading={submitting}
+            onClick={() => selected && onConfirm(selected)}
+          >
             <CalendarPlus data-icon="inline-start" />
             Confirmar
           </Button>

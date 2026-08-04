@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react"
+import { Loader2, type LucideIcon } from "lucide-react"
 
 import {
   AlertDialog,
@@ -22,6 +22,8 @@ interface ConfirmDialogProps {
   cancelLabel?: string
   onConfirm: () => void
   variant?: "default" | "destructive"
+  /** true enquanto a ação confirmada está em voo — desabilita os dois botões. */
+  loading?: boolean
 }
 
 export function ConfirmDialog({
@@ -34,6 +36,7 @@ export function ConfirmDialog({
   cancelLabel = "Cancelar",
   onConfirm,
   variant = "default",
+  loading = false,
 }: ConfirmDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -50,14 +53,16 @@ export function ConfirmDialog({
           )}
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>{cancelLabel}</AlertDialogCancel>
+          <AlertDialogCancel disabled={loading}>{cancelLabel}</AlertDialogCancel>
           <AlertDialogAction
             variant={variant}
+            disabled={loading}
             onClick={(event) => {
               event.preventDefault()
-              onConfirm()
+              if (!loading) onConfirm()
             }}
           >
+            {loading && <Loader2 className="animate-spin" data-icon="inline-start" />}
             {confirmLabel}
           </AlertDialogAction>
         </AlertDialogFooter>

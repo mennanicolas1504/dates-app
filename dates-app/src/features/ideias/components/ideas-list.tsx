@@ -20,6 +20,10 @@ interface IdeasListProps {
   onSchedule?: (id: string) => void
   onEdit?: (id: string) => void
   onDelete?: (id: string) => void
+  /** Ids com alguma ação assíncrona em voo (favoritar/agendar/excluir). */
+  pendingIds?: ReadonlySet<string>
+  /** Signed URL da primeira foto de cada ideia, já resolvida (ver `IdeiasPage`). */
+  thumbnailUrls?: ReadonlyMap<string, string>
 }
 
 /**
@@ -38,6 +42,8 @@ export function IdeasList({
   onSchedule,
   onEdit,
   onDelete,
+  pendingIds,
+  thumbnailUrls,
 }: IdeasListProps) {
   if (!hasAnyIdeas) {
     return (
@@ -69,6 +75,8 @@ export function IdeasList({
             onSchedule={onSchedule}
             onEdit={onEdit}
             onDelete={onDelete}
+            pending={pendingIds?.has(idea.id)}
+            thumbnailUrl={thumbnailUrls?.get(idea.id)}
           />
         </motion.div>
       ))}

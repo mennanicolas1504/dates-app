@@ -1,6 +1,9 @@
+import * as React from "react"
+
 import { CategoryBadge } from "@/components/common/category-badge"
 import { DateBadge } from "@/components/common/date-badge"
 import { Gallery } from "@/components/common/gallery"
+import { MediaSkeleton } from "@/components/common/media/media-skeleton"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Sheet,
@@ -10,8 +13,11 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { formatShortDate } from "@/lib/date"
 import type { Idea } from "@/features/ideias/types"
+import { useSignedMediaUrls } from "@/hooks/use-signed-media-urls"
+import { formatShortDate } from "@/lib/date"
+import { listMedia } from "@/lib/media/api"
+import type { MediaRecord } from "@/lib/media/types"
 
 interface IdeaDetailsSheetProps {
   idea: Idea | null
@@ -22,9 +28,46 @@ interface IdeaDetailsSheetProps {
 /**
  * Painel lateral com todos os dados cadastrados de uma ideia — só os campos
  * que existem. Nada aqui é editável nesta fase, é leitura (ver o pedido:
- * "exibir exatamente os dados cadastrados no modal Nova ideia").
+ * "exibir exatamente os dados cadastrados no modal Nova ideia"). As fotos
+ * usam a `Gallery` genérica do Design System (zoom em tela cheia + swipe já
+ * incluídos nela — ver `components/common/gallery.tsx`).
  */
 export function IdeaDetailsSheet({ idea, open, onOpenChange }: IdeaDetailsSheetProps) {
+  const ideaId = idea?.id ?? null
+
+  const [media, setMedia] = React.useState<MediaRecord[]>([])
+  const [loadedIdeaId, setLoadedIdeaId] = React.useState<string | null>(null)
+  const [mediaLoading, setMediaLoading] = React.useState(false)
+
+  // Mesmo padrão de `IdeiasPage`/`useSignedMediaUrls`: reseta em render
+  // (via sentinel), não com setState síncrono dentro do efeito.
+  if (ideaId !== loadedIdeaId) {
+    setLoadedIdeaId(ideaId)
+    setMedia([])
+    setMediaLoading(ideaId !== null)
+  }
+
+  React.useEffect(() => {
+    if (!ideaId) return
+
+    let cancelled = false
+
+    listMedia("idea", ideaId).then(({ media: fetchedMedia }) => {
+      if (cancelled) return
+      setMedia(fetchedMedia)
+      setMediaLoading(false)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [ideaId])
+
+  const { urls } = useSignedMediaUrls(media)
+  const galleryImages = media
+    .map((item) => ({ src: urls.get(item.id), alt: idea?.title ?? "" }))
+    .filter((image): image is { src: string; alt: string } => Boolean(image.src))
+
   if (!idea) return null
 
   return (
@@ -43,20 +86,17 @@ export function IdeaDetailsSheet({ idea, open, onOpenChange }: IdeaDetailsSheetP
 
         <ScrollArea className="flex-1">
           <div className="flex flex-col gap-4 p-4">
+            {mediaLoading ? (
+              <MediaSkeleton count={3} />
+            ) : (
+              media.length > 0 && <Gallery images={galleryImages} />
+            )}
+
             <DetailField label="Descrição" value={idea.description} />
             <DetailField
               label="Data agendada"
               value={idea.scheduledDate ? formatShortDate(new Date(idea.scheduledDate)) : undefined}
             />
-
-            {idea.images.length > 0 && (
-              <div className="flex flex-col gap-1.5">
-                <span className="text-xs font-medium text-muted-foreground">Imagens</span>
-                <Gallery
-                  images={idea.images.map((src) => ({ src, alt: idea.title }))}
-                />
-              </div>
-            )}
 
             <DetailField label="Local" value={idea.location} />
             <DetailField label="Cidade" value={idea.city} />

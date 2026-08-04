@@ -25,6 +25,10 @@ interface IdeaCardProps {
   onEdit?: (id: string) => void
   onDelete?: (id: string) => void
   className?: string
+  /** true enquanto alguma ação assíncrona desta ideia está em voo — desabilita as ações da linha. */
+  pending?: boolean
+  /** Signed URL da primeira foto, já resolvida pela página (ver `useSignedMediaUrls`). `undefined` = sem foto. */
+  thumbnailUrl?: string
 }
 
 /**
@@ -42,6 +46,8 @@ export function IdeaCard({
   onEdit,
   onDelete,
   className,
+  pending = false,
+  thumbnailUrl,
 }: IdeaCardProps) {
   const meta = [
     idea.status === "scheduled" && idea.scheduledDate
@@ -53,12 +59,12 @@ export function IdeaCard({
   ]
     .filter(Boolean)
     .join(" · ")
-  const thumbnail = idea.images[0]
 
   return (
     <div
       className={cn(
         "group/row flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-surface-hover",
+        pending && "opacity-60",
         className,
       )}
     >
@@ -67,10 +73,11 @@ export function IdeaCard({
         onClick={() => onOpenDetails?.(idea.id)}
         className="flex min-w-0 flex-1 items-center gap-3 text-left"
       >
-        {thumbnail ? (
+        {thumbnailUrl ? (
           <img
-            src={thumbnail}
+            src={thumbnailUrl}
             alt=""
+            loading="lazy"
             className="size-9 shrink-0 rounded-md object-cover ring-1 ring-foreground/10"
           />
         ) : (
@@ -93,6 +100,7 @@ export function IdeaCard({
         <FavoriteToggle
           favorite={idea.favorite}
           onClick={() => onToggleFavorite?.(idea.id)}
+          disabled={pending}
           className={cn(
             !idea.favorite &&
               "opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100",
@@ -106,6 +114,7 @@ export function IdeaCard({
                 variant="ghost"
                 size="icon-sm"
                 aria-label="Agendar"
+                disabled={pending}
                 onClick={() => onSchedule?.(idea.id)}
               >
                 <CalendarPlus className="size-4" strokeWidth={1.75} />
@@ -119,6 +128,7 @@ export function IdeaCard({
                 variant="ghost"
                 size="icon-sm"
                 aria-label="Editar"
+                disabled={pending}
                 onClick={() => onEdit?.(idea.id)}
               >
                 <Pencil className="size-4" strokeWidth={1.75} />
@@ -130,7 +140,7 @@ export function IdeaCard({
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon-sm" aria-label="Mais ações">
+            <Button variant="ghost" size="icon-sm" aria-label="Mais ações" disabled={pending}>
               <MoreHorizontal className="size-4" strokeWidth={1.75} />
             </Button>
           </DropdownMenuTrigger>
@@ -158,20 +168,22 @@ export function IdeaCard({
 interface FavoriteToggleProps {
   favorite: boolean
   onClick?: () => void
+  disabled?: boolean
   className?: string
 }
 
-function FavoriteToggle({ favorite, onClick, className }: FavoriteToggleProps) {
+function FavoriteToggle({ favorite, onClick, disabled, className }: FavoriteToggleProps) {
   return (
     <motion.button
       type="button"
       whileTap={{ scale: 0.85 }}
       transition={{ duration: DURATION.fast }}
       onClick={onClick}
+      disabled={disabled}
       aria-pressed={favorite}
       aria-label={favorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
       className={cn(
-        "flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground/50 transition-[color,opacity] duration-150 hover:text-warning",
+        "flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground/50 transition-[color,opacity] duration-150 hover:text-warning disabled:pointer-events-none disabled:opacity-50",
         className,
       )}
     >
