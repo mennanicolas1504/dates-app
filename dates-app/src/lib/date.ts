@@ -32,6 +32,14 @@ export function formatShortTime(date: Date): string {
   return new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" }).format(date)
 }
 
+/** Bom dia / Boa tarde / Boa noite, a partir da hora local do dispositivo. */
+export function getGreeting(date: Date = new Date()): string {
+  const hour = date.getHours()
+  if (hour < 12) return "Bom dia"
+  if (hour < 18) return "Boa tarde"
+  return "Boa noite"
+}
+
 export function formatShortDateTime(date: Date): string {
   return `${formatShortDate(date)}, ${formatShortTime(date)}`
 }

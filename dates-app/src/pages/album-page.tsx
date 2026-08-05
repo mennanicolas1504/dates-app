@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useLocation } from "react-router-dom"
 
 import { PageContainer } from "@/components/common/page-container"
 import { PageTitle } from "@/components/common/page-title"
@@ -16,6 +17,7 @@ import { useAuth } from "@/providers/auth-provider"
 
 export function AlbumPage() {
   const { space } = useAuth()
+  const location = useLocation()
 
   const [memories, setMemories] = React.useState<Memory[]>([])
   const [mediaByMemoryId, setMediaByMemoryId] = React.useState<Map<string, MediaRecord[]>>(new Map())
@@ -107,6 +109,20 @@ export function AlbumPage() {
       return sort === "recent" ? diff : -diff
     })
   }, [memories, search, filter, sort, mediaByMemoryId])
+
+  // Deep link vindo da Home ("Última memória", ver `LastMemoryCard`): abre
+  // direto a memória pedida assim que ela aparecer na lista filtrada. Mesmo
+  // sentinel de render (não efeito) do resto do arquivo — só tenta uma vez
+  // por id pedido, mesmo que o usuário troque de filtro depois.
+  const requestedMemoryId = (location.state as { openMemoryId?: string } | null)?.openMemoryId ?? null
+  const [consumedMemoryId, setConsumedMemoryId] = React.useState<string | null>(null)
+  if (requestedMemoryId && requestedMemoryId !== consumedMemoryId && !loading) {
+    const index = filteredMemories.findIndex((memory) => memory.id === requestedMemoryId)
+    if (index !== -1) {
+      setConsumedMemoryId(requestedMemoryId)
+      setOpenIndex(index)
+    }
+  }
 
   const handleClearFilters = () => {
     setSearch("")
