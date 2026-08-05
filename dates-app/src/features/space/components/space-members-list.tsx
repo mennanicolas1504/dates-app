@@ -20,7 +20,7 @@ export function SpaceMembersList({ members, currentUserId }: SpaceMembersListPro
       {members.map((member) => (
         <div
           key={member.profileId}
-          className="flex items-center gap-3 rounded-lg border border-border px-3 py-2.5"
+          className="flex items-center gap-3 rounded-xl border border-border bg-card px-3 py-2.5 shadow-xs"
         >
           <Avatar>
             <AvatarFallback>{member.displayName.charAt(0).toUpperCase()}</AvatarFallback>

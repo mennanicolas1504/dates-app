@@ -29,8 +29,8 @@ interface IdeasListProps {
 }
 
 /**
- * Lista vertical densa — não um grid de cards. Cada linha é curta o
- * suficiente para dezenas de ideias caberem sem grande scroll.
+ * Lista vertical de cards curtos — não uma tabela densa com linhas
+ * divididas por fio (Fase 15: menos aparência de admin, mais app).
  */
 export function IdeasList({
   ideas,
@@ -63,7 +63,7 @@ export function IdeasList({
   }
 
   return (
-    <div className="flex flex-col divide-y divide-border">
+    <div className="flex flex-col gap-2">
       {ideas.map((idea, index) => (
         <motion.div
           key={idea.id}

@@ -85,7 +85,7 @@ export function IdeaCard({
   return (
     <div
       className={cn(
-        "group/row flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-surface-hover",
+        "group/row flex items-center gap-3 rounded-xl border border-border bg-card px-3 py-2.5 shadow-xs transition-colors hover:bg-surface-hover",
         pending && "opacity-60",
         className,
       )}

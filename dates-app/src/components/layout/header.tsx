@@ -1,71 +1,43 @@
-import { LogOut, Menu } from "lucide-react"
+import { Bell, Heart } from "lucide-react"
 import { Link } from "react-router-dom"
 
 import { ThemeToggle } from "@/components/theme/theme-toggle"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { paths } from "@/routes/paths"
-import { useAuth } from "@/providers/auth-provider"
-import { useSidebar } from "@/providers/sidebar-provider"
 
+/**
+ * Header mobile (Fase 15) — marca à esquerda, sino de notificações (ainda
+ * sem função — preparação para a futura Central de Notificações) e o
+ * alternador de tema à direita. Sem menu, sem nome do espaço, sem logout:
+ * navegação agora é a Bottom Nav, e Sair só existe dentro de Perfil.
+ */
 export function Header() {
-  const { setMobileOpen } = useSidebar()
-  const { signOut, space, user } = useAuth()
-
   return (
-    <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-sm supports-backdrop-filter:bg-background/60 md:px-6">
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => setMobileOpen(true)}
-        className="text-muted-foreground md:hidden"
-        aria-label="Abrir menu"
-      >
-        <Menu className="size-[18px]" strokeWidth={1.75} />
-      </Button>
-
-      <div className="flex min-w-0 flex-1 items-center justify-center px-2 md:justify-start md:px-0">
-        {space && (
-          <Link
-            to={paths.spaceSettings}
-            className="truncate text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {space.name}
-          </Link>
-        )}
-      </div>
+    <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between border-b border-border bg-background/85 px-4 backdrop-blur-md supports-backdrop-filter:bg-background/70">
+      <Link to={paths.home} className="flex items-center gap-2">
+        <span className="relative flex size-7 shrink-0 items-center justify-center">
+          <Heart className="absolute top-0 left-0 size-4 fill-brand/45 text-brand/45" strokeWidth={0} />
+          <Heart className="absolute right-0 bottom-0 size-4 fill-brand text-brand" strokeWidth={0} />
+        </span>
+        <span className="text-base font-semibold tracking-tight text-foreground">Dates</span>
+      </Link>
 
       <div className="flex items-center gap-1">
-        <ThemeToggle />
-        <Tooltip delayDuration={300}>
-          <TooltipTrigger asChild>
-            <Link
-              to={paths.profile}
-              aria-label="Perfil"
-              className="flex size-8 items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <Avatar size="sm">
-                <AvatarFallback>{(user?.email ?? "?").charAt(0).toUpperCase()}</AvatarFallback>
-              </Avatar>
-            </Link>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">Perfil</TooltipContent>
-        </Tooltip>
         <Tooltip delayDuration={300}>
           <TooltipTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => void signOut()}
               className="text-muted-foreground"
-              aria-label="Sair"
+              aria-label="Notificações"
             >
-              <LogOut className="size-[18px]" strokeWidth={1.75} />
+              <Bell className="size-[18px]" strokeWidth={1.75} />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="bottom">Sair</TooltipContent>
+          <TooltipContent side="bottom">Notificações</TooltipContent>
         </Tooltip>
+        <ThemeToggle />
       </div>
     </header>
   )

@@ -1,0 +1,17 @@
+{
+  "name": "Dates",
+  "short_name": "Dates",
+  "description": "Organize ideias de encontros, agende experiências e mantenha um histórico do que já foi vivido.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#863bff",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

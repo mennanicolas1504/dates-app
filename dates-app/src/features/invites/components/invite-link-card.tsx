@@ -104,7 +104,7 @@ export function InviteLinkCard({ spaceId, createdById, className }: InviteLinkCa
 
   return (
     <div className={className}>
-      <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2">
+      <div className="flex items-center gap-2 rounded-xl border border-border bg-muted/30 px-3 py-2.5">
         <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">{url}</span>
       </div>
       <div className="mt-2 flex gap-2">
