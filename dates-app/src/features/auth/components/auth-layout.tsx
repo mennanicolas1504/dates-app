@@ -41,7 +41,7 @@ export function AuthLayout({ title, description, children, footer }: AuthLayoutP
         <div className="flex flex-col items-center gap-6">
           <DatesMark />
           <div className="flex flex-col items-center gap-3 text-center">
-            <span className="text-3xl font-bold tracking-tighter text-foreground">Dates</span>
+            <span className="text-3xl font-bold tracking-tighter text-foreground">Dates ON</span>
             <Typography
               variant="body"
               className="max-w-[220px] text-balance text-muted-foreground"

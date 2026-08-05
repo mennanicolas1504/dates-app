@@ -18,7 +18,7 @@ export function Header() {
     <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between border-b border-border bg-background/85 px-4 backdrop-blur-md supports-backdrop-filter:bg-background/70">
       <Link to={paths.home} className="flex items-center gap-2">
         <DatesMark size="xs" />
-        <span className="text-base font-semibold tracking-tight text-foreground">Dates</span>
+        <span className="text-base font-semibold tracking-tight text-foreground">Dates ON</span>
       </Link>
 
       <div className="flex items-center gap-1">

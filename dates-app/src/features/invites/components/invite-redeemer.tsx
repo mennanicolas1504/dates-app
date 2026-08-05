@@ -82,7 +82,7 @@ export function InviteRedeemer({ token }: InviteRedeemerProps) {
       <div className="flex flex-col items-center gap-4 py-2 text-center">
         <Users className="size-8 text-muted-foreground" strokeWidth={1.5} />
         <Typography variant="body" className="text-muted-foreground">
-          Você recebeu um convite para participar de um espaço no Dates. Crie sua conta ou entre
+          Você recebeu um convite para participar de um espaço no Dates ON. Crie sua conta ou entre
           para continuar.
         </Typography>
         <div className="flex w-full flex-col gap-2">

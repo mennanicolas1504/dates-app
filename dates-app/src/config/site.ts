@@ -1,3 +1,3 @@
 export const siteConfig = {
-  name: "Dates",
+  name: "Dates ON",
 } as const

@@ -24,7 +24,7 @@ export function OnboardingWelcomePage() {
 
   return (
     <OnboardingLayout
-      title="Bem-vindo ao Dates"
+      title="Bem-vindo ao Dates ON"
       description="Vamos preparar o espaço de vocês dois."
     >
       <SpaceChoice

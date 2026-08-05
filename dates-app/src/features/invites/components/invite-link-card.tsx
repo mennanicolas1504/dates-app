@@ -77,7 +77,7 @@ export function InviteLinkCard({ spaceId, createdById, className }: InviteLinkCa
     if (!url) return
     if (navigator.share) {
       try {
-        await navigator.share({ title: "Convite para o Dates", url })
+        await navigator.share({ title: "Convite para o Dates ON", url })
       } catch {
         // Usuário cancelou o compartilhamento — não é um erro a reportar.
       }
