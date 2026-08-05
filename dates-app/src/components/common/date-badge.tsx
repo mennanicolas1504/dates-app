@@ -24,7 +24,7 @@ const statusConfig: Record<DateBadgeStatus, StatusConfig> = {
     className: "",
   },
   completed: {
-    label: "Concluída",
+    label: "Vivida",
     icon: CheckCircle2,
     className: "border-transparent bg-success/10 text-success",
   },

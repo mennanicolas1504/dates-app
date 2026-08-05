@@ -162,17 +162,57 @@ export async function cancelExperiencePlan(id: string): Promise<ExperienceAction
   return { error: error?.message ?? null }
 }
 
+export interface CompleteExperienceInput {
+  completedAt: string
+  rating: number | null
+  notes: string
+  actualCost: number | null
+}
+
+/**
+ * Concluir sempre muda o status para "completed" — cobre tanto concluir
+ * pela primeira vez quanto editar uma memória já registrada (mesma
+ * operação, sem estado intermediário — mesmo padrão de `planExperience`).
+ * Não exige ter passado por "scheduled": uma ideia pode virar experiência
+ * vivida diretamente (encontro não planejado que só depois é registrado).
+ * `scheduled_date` não é tocado — fica como registro histórico de quando
+ * foi planejado, distinto de `completed_at` (quando aconteceu de fato).
+ */
+export async function completeExperience(
+  id: string,
+  input: CompleteExperienceInput,
+): Promise<ExperienceActionResult> {
+  const { error } = await supabase
+    .from("experiences")
+    .update({
+      status: "completed",
+      completed_at: input.completedAt,
+      rating: input.rating,
+      notes: input.notes || null,
+      actual_cost: input.actualCost,
+    })
+    .eq("id", id)
+
+  return { error: error?.message ?? null }
+}
+
 /**
  * `resource_id` em `media` não é uma FK de verdade (ver `011_media.sql`),
  * então não existe cascade automático — apagar as fotos é responsabilidade
  * de quem consome o Sistema de Mídia. Best-effort e não bloqueante: se uma
  * foto falhar ao apagar, a ideia é excluída de qualquer forma (mesma
  * filosofia de `deleteMedia`, que também não deixa a limpeza do arquivo no
- * Storage bloquear a remoção da linha).
+ * Storage bloquear a remoção da linha). Duas `kind`s a limpar — mídia da
+ * fase Ideia (inspiração) e da fase Experiência (memórias reais), ver
+ * `012_experiences_actual_cost.sql` e a auditoria da Fase 11.
  */
 export async function deleteExperience(id: string): Promise<ExperienceActionResult> {
-  const { media } = await listMedia("idea", id)
-  for (const item of media) {
+  const [{ media: ideaMedia }, { media: experienceMedia }] = await Promise.all([
+    listMedia("idea", id),
+    listMedia("experience", id),
+  ])
+
+  for (const item of [...ideaMedia, ...experienceMedia]) {
     await deleteMedia(item)
   }
 

@@ -1,8 +1,19 @@
 import { motion } from "framer-motion"
-import { CalendarClock, CalendarPlus, CalendarX, MoreHorizontal, Pencil, Star, Trash2 } from "lucide-react"
+import {
+  CalendarClock,
+  CalendarPlus,
+  CalendarX,
+  CircleCheck,
+  MoreHorizontal,
+  Pencil,
+  Sparkles,
+  Star,
+  Trash2,
+} from "lucide-react"
 
 import { CategoryBadge } from "@/components/common/category-badge"
 import { DateBadge } from "@/components/common/date-badge"
+import { Rating } from "@/components/common/rating"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -24,6 +35,8 @@ interface IdeaCardProps {
   /** Abre o `PlanDialog` — cobre tanto planejar quanto editar um planejamento existente. */
   onPlan?: (id: string) => void
   onCancelPlan?: (id: string) => void
+  /** Abre o `CompleteExperienceDialog` — cobre tanto concluir quanto editar uma memória já registrada. */
+  onComplete?: (id: string) => void
   onEdit?: (id: string) => void
   onDelete?: (id: string) => void
   className?: string
@@ -36,7 +49,7 @@ interface IdeaCardProps {
 /**
  * Linha compacta de ideia — não um card de catálogo. Em repouso mostra só o
  * essencial (título, categoria, quem/quando); estado "Ideia" (o padrão) não
- * ganha badge própria, só desvios dele (Planejada/Concluída). Favorito só
+ * ganha badge própria, só desvios dele (Planejada/Vivida). Favorito só
  * aparece sempre quando já é favorito — senão só ao passar o mouse — para
  * não poluir a maioria das linhas com um ícone vazio. Ver UX_ARCHITECTURE.md.
  */
@@ -46,6 +59,7 @@ export function IdeaCard({
   onOpenDetails,
   onPlan,
   onCancelPlan,
+  onComplete,
   onEdit,
   onDelete,
   className,
@@ -53,11 +67,13 @@ export function IdeaCard({
   thumbnailUrl,
 }: IdeaCardProps) {
   const isPlanned = idea.status === "scheduled"
+  const isLived = idea.status === "completed"
 
   const meta = [
     isPlanned && idea.scheduledDate
       ? `Planejada p/ ${formatShortDateTime(new Date(idea.scheduledDate))}`
       : null,
+    isLived && idea.completedAt ? `Vivida em ${formatShortDate(new Date(idea.completedAt))}` : null,
     idea.location,
     idea.notes,
     `Por ${idea.createdBy}`,
@@ -97,6 +113,7 @@ export function IdeaCard({
             </span>
             <CategoryBadge category={idea.category} className="shrink-0" />
             {idea.status !== "idea" && <DateBadge status={idea.status} className="shrink-0" />}
+            {isLived && idea.rating && <Rating value={idea.rating} size="sm" className="shrink-0" />}
           </div>
           {meta && <span className="truncate text-xs text-muted-foreground">{meta}</span>}
         </div>
@@ -169,6 +186,14 @@ export function IdeaCard({
                 Cancelar planejamento
               </DropdownMenuItem>
             )}
+            <DropdownMenuItem onClick={() => onComplete?.(idea.id)}>
+              {isLived ? (
+                <Sparkles data-icon="inline-start" />
+              ) : (
+                <CircleCheck data-icon="inline-start" />
+              )}
+              {isLived ? "Editar memória" : "Marcar como vivida"}
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onEdit?.(idea.id)}>
               <Pencil data-icon="inline-start" />
               Editar

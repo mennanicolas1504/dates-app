@@ -19,6 +19,7 @@ interface IdeasListProps {
   onOpenDetails?: (id: string) => void
   onPlan?: (id: string) => void
   onCancelPlan?: (id: string) => void
+  onComplete?: (id: string) => void
   onEdit?: (id: string) => void
   onDelete?: (id: string) => void
   /** Ids com alguma ação assíncrona em voo (favoritar/planejar/excluir). */
@@ -42,6 +43,7 @@ export function IdeasList({
   onOpenDetails,
   onPlan,
   onCancelPlan,
+  onComplete,
   onEdit,
   onDelete,
   pendingIds,
@@ -76,6 +78,7 @@ export function IdeasList({
             onOpenDetails={onOpenDetails}
             onPlan={onPlan}
             onCancelPlan={onCancelPlan}
+            onComplete={onComplete}
             onEdit={onEdit}
             onDelete={onDelete}
             pending={pendingIds?.has(idea.id)}

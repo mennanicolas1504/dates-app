@@ -4,6 +4,7 @@ import { CategoryBadge } from "@/components/common/category-badge"
 import { DateBadge } from "@/components/common/date-badge"
 import { Gallery } from "@/components/common/gallery"
 import { MediaSkeleton } from "@/components/common/media/media-skeleton"
+import { Rating } from "@/components/common/rating"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Sheet,
@@ -17,7 +18,7 @@ import type { Idea } from "@/features/ideias/types"
 import { useSignedMediaUrls } from "@/hooks/use-signed-media-urls"
 import { formatShortDate, formatShortDateTime } from "@/lib/date"
 import { listMedia } from "@/lib/media/api"
-import type { MediaRecord } from "@/lib/media/types"
+import type { MediaKind, MediaRecord } from "@/lib/media/types"
 
 interface IdeaDetailsSheetProps {
   idea: Idea | null
@@ -25,26 +26,40 @@ interface IdeaDetailsSheetProps {
   onOpenChange: (open: boolean) => void
 }
 
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
+}
+
 /**
  * Painel lateral com todos os dados cadastrados de uma ideia — só os campos
- * que existem. Nada aqui é editável nesta fase, é leitura (ver o pedido:
- * "exibir exatamente os dados cadastrados no modal Nova ideia"). As fotos
- * usam a `Gallery` genérica do Design System (zoom em tela cheia + swipe já
+ * que existem. Nada aqui é editável nesta fase, é leitura. As fotos usam a
+ * `Gallery` genérica do Design System (zoom em tela cheia + swipe já
  * incluídos nela — ver `components/common/gallery.tsx`).
+ *
+ * Uma vez "vivida" (`status: "completed"`), a galeria some da fase Ideia
+ * (`kind: "idea"`, fotos de inspiração) e passa a mostrar as fotos da
+ * própria experiência (`kind: "experience"`, memórias reais) — coleções
+ * deliberadamente separadas mesmo pertencendo ao mesmo registro (ver
+ * `features/ideias/api.ts`, `completeExperience`).
  */
 export function IdeaDetailsSheet({ idea, open, onOpenChange }: IdeaDetailsSheetProps) {
   const ideaId = idea?.id ?? null
+  const isLived = idea?.status === "completed"
+  const mediaKind: MediaKind = isLived ? "experience" : "idea"
 
   const [media, setMedia] = React.useState<MediaRecord[]>([])
-  const [loadedIdeaId, setLoadedIdeaId] = React.useState<string | null>(null)
+  const [loadedKey, setLoadedKey] = React.useState<string | null>(null)
   const [mediaLoading, setMediaLoading] = React.useState(false)
 
   // Mesmo padrão de `IdeiasPage`/`useSignedMediaUrls`: reseta em render
-  // (via sentinel), não com setState síncrono dentro do efeito.
-  if (ideaId !== loadedIdeaId) {
-    setLoadedIdeaId(ideaId)
+  // (via sentinel), não com setState síncrono dentro do efeito. A chave
+  // inclui `mediaKind` porque a mesma ideia pode precisar recarregar a
+  // galeria certa se o estágio mudar enquanto o painel está montado.
+  const key = ideaId ? `${ideaId}:${mediaKind}` : null
+  if (key !== loadedKey) {
+    setLoadedKey(key)
     setMedia([])
-    setMediaLoading(ideaId !== null)
+    setMediaLoading(key !== null)
   }
 
   React.useEffect(() => {
@@ -52,7 +67,7 @@ export function IdeaDetailsSheet({ idea, open, onOpenChange }: IdeaDetailsSheetP
 
     let cancelled = false
 
-    listMedia("idea", ideaId).then(({ media: fetchedMedia }) => {
+    listMedia(mediaKind, ideaId).then(({ media: fetchedMedia }) => {
       if (cancelled) return
       setMedia(fetchedMedia)
       setMediaLoading(false)
@@ -61,7 +76,7 @@ export function IdeaDetailsSheet({ idea, open, onOpenChange }: IdeaDetailsSheetP
     return () => {
       cancelled = true
     }
-  }, [ideaId])
+  }, [ideaId, mediaKind])
 
   const { urls } = useSignedMediaUrls(media)
   const galleryImages = media
@@ -77,6 +92,7 @@ export function IdeaDetailsSheet({ idea, open, onOpenChange }: IdeaDetailsSheetP
           <div className="flex flex-wrap items-center gap-1.5">
             <CategoryBadge category={idea.category} />
             <DateBadge status={idea.status} />
+            {isLived && idea.rating && <Rating value={idea.rating} size="sm" />}
           </div>
           <SheetTitle className="text-lg">{idea.title}</SheetTitle>
           <SheetDescription className="sr-only">
@@ -92,18 +108,44 @@ export function IdeaDetailsSheet({ idea, open, onOpenChange }: IdeaDetailsSheetP
               media.length > 0 && <Gallery images={galleryImages} />
             )}
 
-            <DetailField label="Descrição" value={idea.description} />
-            <DetailField
-              label="Planejada para"
-              value={idea.scheduledDate ? formatShortDateTime(new Date(idea.scheduledDate)) : undefined}
-            />
+            {isLived ? (
+              <>
+                <DetailField
+                  label="Vivida em"
+                  value={idea.completedAt ? formatShortDateTime(new Date(idea.completedAt)) : undefined}
+                />
+                <DetailField label="Local" value={idea.location} />
+                <DetailField label="Observações finais" value={idea.notes} />
+                <DetailField
+                  label="Custo real"
+                  value={idea.actualCost !== undefined ? formatCurrency(idea.actualCost) : undefined}
+                />
+                {idea.scheduledDate && (
+                  <DetailField
+                    label="Planejamento original"
+                    value={formatShortDateTime(new Date(idea.scheduledDate))}
+                  />
+                )}
+                <DetailField label="Descrição" value={idea.description} />
+              </>
+            ) : (
+              <>
+                <DetailField label="Descrição" value={idea.description} />
+                <DetailField
+                  label="Planejada para"
+                  value={
+                    idea.scheduledDate ? formatShortDateTime(new Date(idea.scheduledDate)) : undefined
+                  }
+                />
+                <DetailField label="Local" value={idea.location} />
+                <DetailField label="Observações" value={idea.notes} />
+              </>
+            )}
 
-            <DetailField label="Local" value={idea.location} />
             <DetailField label="Cidade" value={idea.city} />
             <DetailField label="Instagram" value={idea.instagram} />
             <DetailLink label="Website" href={idea.website} />
             <DetailLink label="Link" href={idea.link} />
-            <DetailField label="Observações" value={idea.notes} />
           </div>
         </ScrollArea>
 

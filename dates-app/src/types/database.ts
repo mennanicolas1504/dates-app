@@ -73,6 +73,7 @@ export type Database = {
       }
       experiences: {
         Row: {
+          actual_cost: number | null
           category: string
           city: string | null
           completed_at: string | null
@@ -94,6 +95,7 @@ export type Database = {
           website: string | null
         }
         Insert: {
+          actual_cost?: number | null
           category: string
           city?: string | null
           completed_at?: string | null
@@ -115,6 +117,7 @@ export type Database = {
           website?: string | null
         }
         Update: {
+          actual_cost?: number | null
           category?: string
           city?: string | null
           completed_at?: string | null

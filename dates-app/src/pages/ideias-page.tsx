@@ -8,6 +8,7 @@ import { SkeletonList } from "@/components/common/skeletons"
 import { Typography } from "@/components/common/typography"
 import {
   cancelExperiencePlan,
+  completeExperience,
   createExperience,
   deleteExperience,
   fetchExperiencesForSpace,
@@ -16,6 +17,7 @@ import {
   updateExperienceFavorite,
 } from "@/features/ideias/api"
 import { IDEA_CATEGORIES } from "@/features/ideias/data/categories"
+import { CompleteExperienceDialog, type CompleteConfirmValues } from "@/features/ideias/components/complete-dialog"
 import { IdeaDetailsSheet } from "@/features/ideias/components/idea-details-sheet"
 import { IdeasList } from "@/features/ideias/components/ideas-list"
 import { IdeasToolbar, type IdeasSortOption } from "@/features/ideias/components/ideas-toolbar"
@@ -26,8 +28,13 @@ import type { Idea, NewIdeaFormValues } from "@/features/ideias/types"
 import { toast } from "@/hooks/use-toast"
 import { useSignedMediaUrls } from "@/hooks/use-signed-media-urls"
 import { listMedia, listMediaForResources } from "@/lib/media/api"
-import type { MediaRecord } from "@/lib/media/types"
+import type { MediaKind, MediaRecord } from "@/lib/media/types"
 import { useAuth } from "@/providers/auth-provider"
+
+/** Fase "vivida" mostra as fotos da experiência de verdade, não as de inspiração da Ideia. */
+function thumbnailKindFor(idea: Pick<Idea, "status">): MediaKind {
+  return idea.status === "completed" ? "experience" : "idea"
+}
 
 function ideaToFormValues(idea: Idea): NewIdeaFormValues {
   return {
@@ -71,6 +78,12 @@ export function IdeiasPage() {
 
   const [planTarget, setPlanTarget] = useState<Idea | null>(null)
   const [planning, setPlanning] = useState(false)
+  const [completeTarget, setCompleteTarget] = useState<Idea | null>(null)
+  const [completing, setCompleting] = useState(false)
+  // Fotos da experiência (kind: "experience") sendo gerenciadas no
+  // CompleteExperienceDialog — mesmo padrão de `dialogMedia`, coleção
+  // separada porque é uma `kind` diferente da Ideia.
+  const [completeDialogMedia, setCompleteDialogMedia] = useState<MediaRecord[]>([])
   const [deleteTarget, setDeleteTarget] = useState<Idea | null>(null)
   const [deleting, setDeleting] = useState(false)
 
@@ -101,8 +114,8 @@ export function IdeiasPage() {
     })
   }
 
-  async function refreshThumbnail(ideaId: string) {
-    const { media } = await listMedia("idea", ideaId)
+  async function refreshThumbnail(ideaId: string, kind: MediaKind) {
+    const { media } = await listMedia(kind, ideaId)
     setThumbnails((prev) => {
       const next = new Map(prev)
       if (media[0]) next.set(ideaId, media[0])
@@ -137,14 +150,22 @@ export function IdeiasPage() {
       setLoading(false)
 
       if (experiences.length > 0) {
-        const { media } = await listMediaForResources(
-          "idea",
-          experiences.map((idea) => idea.id),
-        )
+        // Ideias "vividas" mostram a foto da experiência real; as demais
+        // mostram a foto de inspiração da Ideia — duas `kind`s, duas
+        // consultas em lote (ver `thumbnailKindFor`).
+        const ideaIds = experiences.filter((idea) => thumbnailKindFor(idea) === "idea").map((idea) => idea.id)
+        const experienceIds = experiences
+          .filter((idea) => thumbnailKindFor(idea) === "experience")
+          .map((idea) => idea.id)
+
+        const [{ media: ideaMedia }, { media: experienceMedia }] = await Promise.all([
+          listMediaForResources("idea", ideaIds),
+          listMediaForResources("experience", experienceIds),
+        ])
         if (cancelled) return
 
         const firstByIdea = new Map<string, MediaRecord>()
-        for (const item of media) {
+        for (const item of [...ideaMedia, ...experienceMedia]) {
           if (!firstByIdea.has(item.resourceId)) firstByIdea.set(item.resourceId, item)
         }
         setThumbnails(firstByIdea)
@@ -217,7 +238,7 @@ export function IdeiasPage() {
   // diálogo está aberto por cima dela).
   const handleDialogOpenChange = (open: boolean) => {
     if (submittingIdea) return
-    if (!open && editingId) refreshThumbnail(editingId)
+    if (!open && editingId) refreshThumbnail(editingId, "idea")
     setNewIdeaOpen(open)
   }
 
@@ -370,6 +391,78 @@ export function IdeiasPage() {
     toast.success({ title: "Planejamento cancelado" })
   }
 
+  const handleRequestComplete = (id: string) => {
+    const idea = ideas.find((item) => item.id === id)
+    if (!idea) return
+    setCompleteTarget(idea)
+    setCompleteDialogMedia([])
+    listMedia("experience", id).then(({ media }) => setCompleteDialogMedia(media))
+  }
+
+  const handleConfirmComplete = async (values: CompleteConfirmValues) => {
+    if (!completeTarget) return
+    const id = completeTarget.id
+    const wasAlreadyLived = completeTarget.status === "completed"
+    const completedAt = values.completedAt.toISOString()
+
+    setCompleting(true)
+    const { error } = await completeExperience(id, {
+      completedAt,
+      rating: values.rating > 0 ? values.rating : null,
+      notes: values.notes,
+      actualCost: values.actualCost,
+    })
+    setCompleting(false)
+
+    if (error) {
+      toast.error({ title: "Não foi possível registrar a memória", description: error })
+      return
+    }
+
+    setIdeas((prev) =>
+      prev.map((idea) =>
+        idea.id === id
+          ? {
+              ...idea,
+              status: "completed",
+              completedAt,
+              rating: values.rating > 0 ? values.rating : undefined,
+              notes: values.notes || undefined,
+              actualCost: values.actualCost ?? undefined,
+            }
+          : idea,
+      ),
+    )
+    toast.success({ title: wasAlreadyLived ? "Memória atualizada" : "Experiência marcada como vivida" })
+    setCompleteTarget(null)
+  }
+
+  // Mesmo padrão de `handleDialogOpenChange`: atualiza a miniatura da
+  // lista (agora com a foto certa — kind "experience") só ao fechar.
+  const handleCompleteDialogOpenChange = (open: boolean) => {
+    if (completing) return
+    if (!open && completeTarget) refreshThumbnail(completeTarget.id, "experience")
+    if (!open) setCompleteTarget(null)
+  }
+
+  const handleCompleteMediaUploaded = (media: MediaRecord) => {
+    setCompleteDialogMedia((prev) => [...prev, media].sort((a, b) => a.position - b.position))
+  }
+
+  const handleCompleteMediaRemoved = (mediaId: string) => {
+    setCompleteDialogMedia((prev) => prev.filter((item) => item.id !== mediaId))
+  }
+
+  const handleCompleteMediaReordered = (updates: { id: string; position: number }[]) => {
+    setCompleteDialogMedia((prev) => {
+      const next = prev.map((item) => {
+        const update = updates.find((entry) => entry.id === item.id)
+        return update ? { ...item, position: update.position } : item
+      })
+      return next.sort((a, b) => a.position - b.position)
+    })
+  }
+
   const handleRequestDelete = (id: string) => {
     const idea = ideas.find((item) => item.id === id)
     if (idea) setDeleteTarget(idea)
@@ -435,6 +528,7 @@ export function IdeiasPage() {
           onOpenDetails={handleOpenDetails}
           onPlan={handleRequestPlan}
           onCancelPlan={handleCancelPlan}
+          onComplete={handleRequestComplete}
           onEdit={handleOpenEdit}
           onDelete={handleRequestDelete}
           pendingIds={pendingIds}
@@ -472,6 +566,20 @@ export function IdeiasPage() {
         onOpenChange={(open) => !open && !planning && setPlanTarget(null)}
         onConfirm={handleConfirmPlan}
         submitting={planning}
+      />
+
+      <CompleteExperienceDialog
+        idea={completeTarget}
+        open={completeTarget !== null}
+        onOpenChange={handleCompleteDialogOpenChange}
+        onConfirm={handleConfirmComplete}
+        submitting={completing}
+        spaceId={space.id}
+        createdById={user.id}
+        media={completeDialogMedia}
+        onMediaUploaded={handleCompleteMediaUploaded}
+        onMediaRemoved={handleCompleteMediaRemoved}
+        onMediaReordered={handleCompleteMediaReordered}
       />
 
       <ConfirmDialog

@@ -37,6 +37,12 @@ export interface Idea {
   notes?: string
   /** ISO date string — presente quando status é "scheduled" ou "completed". */
   scheduledDate?: string
+  /** ISO date string — presente quando status é "completed" (quando aconteceu de fato). */
+  completedAt?: string
+  /** 1 a 5 — concluir sem avaliação é um caminho válido, por isso `undefined` é possível mesmo já "completed". */
+  rating?: number
+  /** Custo real, opcional — só faz sentido depois de concluída. */
+  actualCost?: number
 }
 
 /**
@@ -75,5 +81,8 @@ export function mapExperienceRow(row: Tables<"experiences">, createdByName: stri
     city: row.city ?? undefined,
     notes: row.notes ?? undefined,
     scheduledDate: row.scheduled_date ?? undefined,
+    completedAt: row.completed_at ?? undefined,
+    rating: row.rating ?? undefined,
+    actualCost: row.actual_cost ?? undefined,
   }
 }
