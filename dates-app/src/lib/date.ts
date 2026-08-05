@@ -44,6 +44,32 @@ export function formatShortDateTime(date: Date): string {
   return `${formatShortDate(date)}, ${formatShortTime(date)}`
 }
 
+/**
+ * "há 5 min" / "ontem" / "há 3 dias" / data curta — usado pela Central de
+ * Notificações (histórico recente, não precisa de precisão de segundos).
+ * Cai em `formatShortDate` depois de uma semana, quando "há N dias" deixa de
+ * ser mais legível que a data em si.
+ */
+export function formatRelativeTime(date: Date, now: Date = new Date()): string {
+  const diffMs = now.getTime() - date.getTime()
+  const diffMinutes = Math.floor(diffMs / 60_000)
+
+  if (diffMinutes < 1) return "agora"
+  if (diffMinutes < 60) return `há ${diffMinutes} min`
+
+  const diffHours = Math.floor(diffMinutes / 60)
+  if (diffHours < 24 && isSameDay(date, now)) return `há ${diffHours} h`
+
+  const yesterday = new Date(now)
+  yesterday.setDate(yesterday.getDate() - 1)
+  if (isSameDay(date, yesterday)) return "ontem"
+
+  const diffDays = Math.floor(diffMinutes / (60 * 24))
+  if (diffDays < 7) return `há ${diffDays} dias`
+
+  return formatShortDate(date)
+}
+
 /** `time` no formato "HH:mm" (valor nativo de `<input type="time">`). */
 export function combineDateAndTime(date: Date, time: string): Date {
   const [hours, minutes] = time.split(":").map(Number)

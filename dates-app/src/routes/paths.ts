@@ -4,6 +4,7 @@ export const paths = {
   album: "/album",
   spaceSettings: "/espaco",
   profile: "/perfil",
+  notifications: "/notificacoes",
 
   login: "/entrar",
   signup: "/cadastro",

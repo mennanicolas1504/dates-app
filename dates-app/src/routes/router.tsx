@@ -8,6 +8,7 @@ import { HomePage } from "@/pages/home-page"
 import { IdeiasPage } from "@/pages/ideias-page"
 import { InvitePage } from "@/pages/invite-page"
 import { LoginPage } from "@/pages/login-page"
+import { NotificationsPage } from "@/pages/notifications-page"
 import { OnboardingCreateSpacePage } from "@/pages/onboarding-create-space-page"
 import { OnboardingJoinSpacePage } from "@/pages/onboarding-join-space-page"
 import { OnboardingShareInvitePage } from "@/pages/onboarding-share-invite-page"
@@ -76,6 +77,7 @@ export const router = createBrowserRouter([
               { path: paths.album, element: <AlbumPage /> },
               { path: paths.spaceSettings, element: <SpaceSettingsPage /> },
               { path: paths.profile, element: <ProfilePage /> },
+              { path: paths.notifications, element: <NotificationsPage /> },
             ],
           },
         ],

@@ -224,6 +224,70 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          actor_id: string | null
+          body: string | null
+          created_at: string
+          id: string
+          read_at: string | null
+          recipient_id: string
+          resource_id: string | null
+          resource_kind: string | null
+          space_id: string
+          title: string
+          type: string
+        }
+        Insert: {
+          actor_id?: string | null
+          body?: string | null
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          recipient_id: string
+          resource_id?: string | null
+          resource_kind?: string | null
+          space_id: string
+          title: string
+          type: string
+        }
+        Update: {
+          actor_id?: string | null
+          body?: string | null
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          recipient_id?: string
+          resource_id?: string | null
+          resource_kind?: string | null
+          space_id?: string
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -378,6 +442,19 @@ export type Database = {
     Functions: {
       is_space_member: { Args: { target_space_id: string }; Returns: boolean }
       is_space_owner: { Args: { target_space_id: string }; Returns: boolean }
+      notification_actor_name: { Args: { p_actor_id: string }; Returns: string }
+      notify_space_mates: {
+        Args: {
+          p_actor_id: string
+          p_body: string
+          p_resource_id: string
+          p_resource_kind: string
+          p_space_id: string
+          p_title: string
+          p_type: string
+        }
+        Returns: undefined
+      }
       redeem_space_invite: { Args: { p_token: string }; Returns: string }
       transfer_space_ownership: {
         Args: { p_new_owner_id: string; p_space_id: string }

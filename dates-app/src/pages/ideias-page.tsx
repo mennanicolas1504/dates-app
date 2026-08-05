@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { Trash2 } from "lucide-react"
+import { useLocation } from "react-router-dom"
 
 import { ConfirmDialog } from "@/components/common/confirm-dialog"
 import { PageContainer } from "@/components/common/page-container"
@@ -52,6 +53,7 @@ function ideaToFormValues(idea: Idea): NewIdeaFormValues {
 
 export function IdeiasPage() {
   const { space, user } = useAuth()
+  const location = useLocation()
 
   const [ideas, setIdeas] = useState<Idea[]>([])
   const [loading, setLoading] = useState(true)
@@ -330,6 +332,20 @@ export function IdeiasPage() {
     if (!idea) return
     setDetailsIdea(idea)
     setDetailsOpen(true)
+  }
+
+  // Deep link vindo da Central de Notificações (ver `features/notifications/navigation.ts`)
+  // — mesmo padrão de `AlbumPage`/`openMemoryId`: abre direto assim que a
+  // ideia pedida aparecer na lista carregada, só uma vez por id pedido.
+  const requestedIdeaId = (location.state as { openIdeaId?: string } | null)?.openIdeaId ?? null
+  const [consumedIdeaId, setConsumedIdeaId] = useState<string | null>(null)
+  if (requestedIdeaId && requestedIdeaId !== consumedIdeaId && !loading) {
+    const idea = ideas.find((item) => item.id === requestedIdeaId)
+    if (idea) {
+      setConsumedIdeaId(requestedIdeaId)
+      setDetailsIdea(idea)
+      setDetailsOpen(true)
+    }
   }
 
   const handleRequestPlan = (id: string) => {

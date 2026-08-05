@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils"
 
 interface ListItemProps extends Omit<React.ComponentProps<"div">, "title"> {
   icon?: LucideIcon
+  /** Substitui o ícone padrão por qualquer nó (ex: miniatura/avatar) — ver `NotificationItem`. */
+  leading?: React.ReactNode
   title: string
   description?: string
   trailing?: React.ReactNode
@@ -13,6 +15,7 @@ interface ListItemProps extends Omit<React.ComponentProps<"div">, "title"> {
 
 export function ListItem({
   icon: Icon,
+  leading,
   title,
   description,
   trailing,
@@ -30,11 +33,12 @@ export function ListItem({
       )}
       {...props}
     >
-      {Icon && (
-        <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
-          <Icon className="size-[16px]" strokeWidth={1.75} />
-        </div>
-      )}
+      {leading ??
+        (Icon && (
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+            <Icon className="size-[16px]" strokeWidth={1.75} />
+          </div>
+        ))}
       <div className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-sm font-medium text-foreground">
           {title}
