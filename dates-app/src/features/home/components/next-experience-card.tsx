@@ -12,12 +12,19 @@ import { fadeIn, transition } from "@/lib/motion"
 interface NextExperienceCardProps {
   experience?: Idea
   onOpen: () => void
+  delayIndex?: number
 }
 
 /** Card 2 — próxima experiência planejada (a de `scheduledDate` mais próxima), ou convite para planejar uma. */
-export function NextExperienceCard({ experience, onOpen }: NextExperienceCardProps) {
+export function NextExperienceCard({ experience, onOpen, delayIndex = 0 }: NextExperienceCardProps) {
   return (
-    <motion.div initial="initial" animate="animate" variants={fadeIn} transition={transition} className="flex flex-col gap-2">
+    <motion.div
+      initial="initial"
+      animate="animate"
+      variants={fadeIn}
+      transition={{ ...transition, delay: delayIndex * 0.06 }}
+      className="flex flex-col gap-2"
+    >
       <SectionTitle as="h2" className="text-sm">
         Próximo encontro
       </SectionTitle>

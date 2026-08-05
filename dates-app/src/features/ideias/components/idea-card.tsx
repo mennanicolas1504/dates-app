@@ -90,10 +90,17 @@ export function IdeaCard({
         className,
       )}
     >
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => onOpenDetails?.(idea.id)}
-        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault()
+            onOpenDetails?.(idea.id)
+          }
+        }}
+        className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         {thumbnailUrl ? (
           <img
@@ -117,7 +124,7 @@ export function IdeaCard({
           </div>
           {meta && <span className="truncate text-xs text-muted-foreground">{meta}</span>}
         </div>
-      </button>
+      </div>
 
       <div className="flex shrink-0 items-center gap-0.5">
         <FavoriteToggle

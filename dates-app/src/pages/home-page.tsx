@@ -136,9 +136,14 @@ export function HomePage() {
         spaceName={space.name}
         avatarUrl={avatarUrl}
         fallbackLabel={displayName.charAt(0).toUpperCase() || "?"}
+        delayIndex={0}
       />
 
-      <NextExperienceCard experience={nextExperience} onOpen={() => navigate(paths.ideias)} />
+      <NextExperienceCard
+        experience={nextExperience}
+        onOpen={() => navigate(paths.ideias)}
+        delayIndex={1}
+      />
 
       <LastMemoryCard
         memory={recentMemory}
@@ -146,17 +151,19 @@ export function HomePage() {
         onOpen={() =>
           recentMemory && navigate(paths.album, { state: { openMemoryId: recentMemory.id } })
         }
+        delayIndex={2}
       />
 
       <FeaturedIdeaCard
         idea={featuredIdea}
         onOpen={() => navigate(paths.ideias)}
         onCreate={() => navigate(paths.ideias)}
+        delayIndex={3}
       />
 
-      <StatsCard stats={stats} />
+      <StatsCard stats={stats} delayIndex={4} />
 
-      <SuggestionCard idea={suggestionIdea} onOpen={() => navigate(paths.ideias)} />
+      <SuggestionCard idea={suggestionIdea} onOpen={() => navigate(paths.ideias)} delayIndex={5} />
     </PageContainer>
   )
 }

@@ -8,12 +8,19 @@ import { fadeIn, transition } from "@/lib/motion"
 
 interface StatsCardProps {
   stats: HomeStats
+  delayIndex?: number
 }
 
 /** Card 5 — resumo do espaço, só contagens sobre os dados já buscados (ver `computeHomeStats`). Nenhuma tabela nova. */
-export function StatsCard({ stats }: StatsCardProps) {
+export function StatsCard({ stats, delayIndex = 0 }: StatsCardProps) {
   return (
-    <motion.div initial="initial" animate="animate" variants={fadeIn} transition={transition} className="flex flex-col gap-2">
+    <motion.div
+      initial="initial"
+      animate="animate"
+      variants={fadeIn}
+      transition={{ ...transition, delay: delayIndex * 0.06 }}
+      className="flex flex-col gap-2"
+    >
       <SectionTitle as="h2" className="text-sm">
         Resumo
       </SectionTitle>

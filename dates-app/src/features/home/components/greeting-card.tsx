@@ -9,21 +9,29 @@ interface GreetingCardProps {
   spaceName: string
   avatarUrl?: string
   fallbackLabel: string
+  /** Posição do card na Home — atrasa a entrada em cascata (ver `HomePage`). */
+  delayIndex?: number
 }
 
 /**
- * Fundo em degradê roxo, de propósito — é o slot que a Fase 17
+ * Fundo em degradê roxo, de propósito — é o slot que a Fase 18
  * (Personalização) vai preencher com a foto do casal ou a capa do espaço
  * (`kind: "couple_photo" | "space_cover"`, já existentes no Sistema de
  * Mídia desde a Fase 9.2, só nunca usados). Trocar o gradiente por uma
  * `<img>` real ali dentro não muda a estrutura do card nem quem o usa.
  */
-export function GreetingCard({ displayName, spaceName, avatarUrl, fallbackLabel }: GreetingCardProps) {
+export function GreetingCard({
+  displayName,
+  spaceName,
+  avatarUrl,
+  fallbackLabel,
+  delayIndex = 0,
+}: GreetingCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: DURATION.slow, ease: EASE_OUT }}
+      transition={{ duration: DURATION.slow, ease: EASE_OUT, delay: delayIndex * 0.06 }}
       className="relative overflow-hidden rounded-2xl ring-1 ring-foreground/10"
     >
       <div

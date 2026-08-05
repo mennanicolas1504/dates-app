@@ -12,12 +12,19 @@ interface FeaturedIdeaCardProps {
   idea?: Idea
   onOpen: () => void
   onCreate: () => void
+  delayIndex?: number
 }
 
 /** Card 4 — uma ideia em destaque: favorita primeiro, senão a mais recente (ver `selectFeaturedIdea`). */
-export function FeaturedIdeaCard({ idea, onOpen, onCreate }: FeaturedIdeaCardProps) {
+export function FeaturedIdeaCard({ idea, onOpen, onCreate, delayIndex = 0 }: FeaturedIdeaCardProps) {
   return (
-    <motion.div initial="initial" animate="animate" variants={fadeIn} transition={transition} className="flex flex-col gap-2">
+    <motion.div
+      initial="initial"
+      animate="animate"
+      variants={fadeIn}
+      transition={{ ...transition, delay: delayIndex * 0.06 }}
+      className="flex flex-col gap-2"
+    >
       <SectionTitle as="h2" className="text-sm">
         Ideia em destaque
       </SectionTitle>

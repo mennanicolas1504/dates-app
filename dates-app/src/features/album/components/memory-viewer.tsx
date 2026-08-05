@@ -1,6 +1,6 @@
 import * as React from "react"
 import { AnimatePresence, motion, type PanInfo } from "framer-motion"
-import { ChevronLeft, ChevronRight, MapPin } from "lucide-react"
+import { CalendarDays, ChevronLeft, ChevronRight, MapPin, Wallet } from "lucide-react"
 
 import { Gallery } from "@/components/common/gallery"
 import { MediaSkeleton } from "@/components/common/media/media-skeleton"
@@ -87,33 +87,40 @@ export function MemoryViewer({ memories, mediaByMemoryId, index, onIndexChange }
                   galleryImages.length > 0 && <Gallery images={galleryImages} />
                 )}
 
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-3">
                   <div className="flex items-start justify-between gap-2">
                     <Typography variant="title">{memory.title}</Typography>
                     {memory.rating ? <Rating value={memory.rating} size="sm" /> : null}
                   </div>
 
-                  <Typography variant="caption">
-                    {formatShortDateTime(new Date(memory.completedAt))}
-                  </Typography>
-
-                  {memory.location && (
-                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                      <MapPin className="size-3.5 shrink-0" strokeWidth={1.75} />
-                      <span>{memory.location}</span>
-                    </div>
-                  )}
+                  <div className="flex flex-col gap-1.5 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-1.5">
+                      <CalendarDays className="size-3.5 shrink-0" strokeWidth={1.75} />
+                      {formatShortDateTime(new Date(memory.completedAt))}
+                    </span>
+                    {memory.location && (
+                      <span className="flex items-center gap-1.5">
+                        <MapPin className="size-3.5 shrink-0" strokeWidth={1.75} />
+                        {memory.location}
+                      </span>
+                    )}
+                    {memory.actualCost !== undefined && (
+                      <span className="flex items-center gap-1.5">
+                        <Wallet className="size-3.5 shrink-0" strokeWidth={1.75} />
+                        {formatCurrency(memory.actualCost)}
+                      </span>
+                    )}
+                  </div>
 
                   {memory.notes && (
-                    <Typography variant="body" className="whitespace-pre-wrap text-foreground">
-                      {memory.notes}
-                    </Typography>
-                  )}
-
-                  {memory.actualCost !== undefined && (
-                    <Typography variant="caption">
-                      Custo real: {formatCurrency(memory.actualCost)}
-                    </Typography>
+                    <div className="rounded-lg border-l-2 border-brand/40 bg-muted/40 px-3 py-2.5">
+                      <Typography
+                        variant="body"
+                        className="text-pretty whitespace-pre-wrap text-foreground italic"
+                      >
+                        “{memory.notes}”
+                      </Typography>
+                    </div>
                   )}
                 </div>
               </motion.div>

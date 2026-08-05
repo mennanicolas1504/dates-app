@@ -12,12 +12,19 @@ interface LastMemoryCardProps {
   memory?: Memory
   coverUrl?: string
   onOpen: () => void
+  delayIndex?: number
 }
 
 /** Card 3 — memória mais recente (a de `completedAt` mais recente). Toque abre o Álbum já na memória certa (ver `AlbumPage`). */
-export function LastMemoryCard({ memory, coverUrl, onOpen }: LastMemoryCardProps) {
+export function LastMemoryCard({ memory, coverUrl, onOpen, delayIndex = 0 }: LastMemoryCardProps) {
   return (
-    <motion.div initial="initial" animate="animate" variants={fadeIn} transition={transition} className="flex flex-col gap-2">
+    <motion.div
+      initial="initial"
+      animate="animate"
+      variants={fadeIn}
+      transition={{ ...transition, delay: delayIndex * 0.06 }}
+      className="flex flex-col gap-2"
+    >
       <SectionTitle as="h2" className="text-sm">
         Última memória
       </SectionTitle>

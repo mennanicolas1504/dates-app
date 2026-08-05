@@ -10,6 +10,7 @@ import { fadeIn, transition } from "@/lib/motion"
 interface SuggestionCardProps {
   idea?: Idea
   onOpen: () => void
+  delayIndex?: number
 }
 
 /**
@@ -18,11 +19,17 @@ interface SuggestionCardProps {
  * algoritmo — a troca por uma sugestão de verdade no futuro é só trocar o
  * seletor que alimenta este componente, a interface dele já está pronta.
  */
-export function SuggestionCard({ idea, onOpen }: SuggestionCardProps) {
+export function SuggestionCard({ idea, onOpen, delayIndex = 0 }: SuggestionCardProps) {
   if (!idea) return null
 
   return (
-    <motion.div initial="initial" animate="animate" variants={fadeIn} transition={transition} className="flex flex-col gap-2">
+    <motion.div
+      initial="initial"
+      animate="animate"
+      variants={fadeIn}
+      transition={{ ...transition, delay: delayIndex * 0.06 }}
+      className="flex flex-col gap-2"
+    >
       <SectionTitle as="h2" className="flex items-center gap-1.5 text-sm">
         <Sparkles className="size-3.5 text-brand" strokeWidth={1.75} />
         Que tal planejar isso?
