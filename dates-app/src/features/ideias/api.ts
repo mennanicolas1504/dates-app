@@ -1,6 +1,7 @@
 import { mapExperienceRow } from "@/features/ideias/types"
 import type { Idea, NewIdeaFormValues } from "@/features/ideias/types"
 import { deleteMedia, listMedia } from "@/lib/media/api"
+import { profileDisplayName } from "@/lib/profile-display-name"
 import { supabase } from "@/lib/supabase"
 
 interface ExperiencesResult {
@@ -15,10 +16,6 @@ interface ExperienceResult {
 
 interface ExperienceActionResult {
   error: string | null
-}
-
-function creatorDisplayName(profile: { email: string; display_name: string | null }): string {
-  return profile.display_name ?? profile.email.split("@")[0]
 }
 
 function experienceInsertValues(values: NewIdeaFormValues) {
@@ -63,7 +60,7 @@ export async function fetchExperiencesForSpace(spaceId: string): Promise<Experie
     if (profilesError) return { experiences: [], error: profilesError.message }
 
     for (const profile of profileRows ?? []) {
-      namesById.set(profile.id, creatorDisplayName(profile))
+      namesById.set(profile.id, profileDisplayName(profile))
     }
   }
 

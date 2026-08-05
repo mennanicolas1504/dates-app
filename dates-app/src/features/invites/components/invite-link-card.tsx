@@ -1,11 +1,12 @@
 import * as React from "react"
-import { Check, Copy, Share2 } from "lucide-react"
+import { Check, Copy, RefreshCw, Share2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ConfirmDialog } from "@/components/common/confirm-dialog"
 import { Typography } from "@/components/common/typography"
 import { buildInviteUrl } from "@/features/invites/build-invite-url"
-import { getOrCreateActiveInvite } from "@/features/invites/api"
+import { getOrCreateActiveInvite, regenerateSpaceInvite } from "@/features/invites/api"
 import { toast } from "@/hooks/use-toast"
 
 interface InviteLinkCardProps {
@@ -24,6 +25,8 @@ export function InviteLinkCard({ spaceId, createdById, className }: InviteLinkCa
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const [copied, setCopied] = React.useState(false)
+  const [confirmRegenerate, setConfirmRegenerate] = React.useState(false)
+  const [regenerating, setRegenerating] = React.useState(false)
 
   React.useEffect(() => {
     let cancelled = false
@@ -42,6 +45,25 @@ export function InviteLinkCard({ spaceId, createdById, className }: InviteLinkCa
       cancelled = true
     }
   }, [spaceId, createdById])
+
+  async function handleRegenerate() {
+    setRegenerating(true)
+    const { invite, error: regenerateError } = await regenerateSpaceInvite(spaceId, createdById)
+    setRegenerating(false)
+    setConfirmRegenerate(false)
+
+    if (regenerateError || !invite) {
+      toast.error({
+        title: "Não foi possível gerar um novo link",
+        description: regenerateError ?? undefined,
+      })
+      return
+    }
+
+    setUrl(buildInviteUrl(invite.token))
+    setError(null)
+    toast.success({ title: "Novo link gerado", description: "O link anterior não funciona mais." })
+  }
 
   async function handleCopy() {
     if (!url) return
@@ -95,6 +117,26 @@ export function InviteLinkCard({ spaceId, createdById, className }: InviteLinkCa
           Compartilhar
         </Button>
       </div>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setConfirmRegenerate(true)}
+        className="mt-1 text-muted-foreground"
+      >
+        <RefreshCw data-icon="inline-start" />
+        Gerar novo link
+      </Button>
+
+      <ConfirmDialog
+        open={confirmRegenerate}
+        onOpenChange={(open) => !regenerating && setConfirmRegenerate(open)}
+        title="Gerar novo link de convite"
+        description="O link atual para de funcionar imediatamente. Use isso se acha que ele foi compartilhado com a pessoa errada."
+        icon={RefreshCw}
+        confirmLabel="Gerar novo link"
+        onConfirm={handleRegenerate}
+        loading={regenerating}
+      />
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { LogOut, Menu } from "lucide-react"
 import { Link } from "react-router-dom"
 
 import { ThemeToggle } from "@/components/theme/theme-toggle"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { paths } from "@/routes/paths"
@@ -10,7 +11,7 @@ import { useSidebar } from "@/providers/sidebar-provider"
 
 export function Header() {
   const { setMobileOpen } = useSidebar()
-  const { signOut, space } = useAuth()
+  const { signOut, space, user } = useAuth()
 
   return (
     <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-sm supports-backdrop-filter:bg-background/60 md:px-6">
@@ -37,6 +38,20 @@ export function Header() {
 
       <div className="flex items-center gap-1">
         <ThemeToggle />
+        <Tooltip delayDuration={300}>
+          <TooltipTrigger asChild>
+            <Link
+              to={paths.profile}
+              aria-label="Perfil"
+              className="flex size-8 items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Avatar size="sm">
+                <AvatarFallback>{(user?.email ?? "?").charAt(0).toUpperCase()}</AvatarFallback>
+              </Avatar>
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Perfil</TooltipContent>
+        </Tooltip>
         <Tooltip delayDuration={300}>
           <TooltipTrigger asChild>
             <Button

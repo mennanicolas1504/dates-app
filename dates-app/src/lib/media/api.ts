@@ -87,6 +87,21 @@ export async function listMediaForResources(
 }
 
 /**
+ * Toda mídia de um espaço, de qualquer `kind` — usado só na exclusão do
+ * espaço (ver `features/space/api.ts`, `deleteSpace`), para apagar os
+ * arquivos do Storage antes de apagar a linha de `spaces`: o cascade de FK
+ * (`media.space_id references spaces(id) on delete cascade`, ver
+ * `011_media.sql`) limpa as linhas do banco sozinho, mas nunca os arquivos
+ * no bucket — isso só a API resolve.
+ */
+export async function listMediaForSpace(spaceId: string): Promise<MediaListResult> {
+  const { data, error } = await supabase.from("media").select("*").eq("space_id", spaceId)
+
+  if (error) return { media: [], error: { code: "unknown", message: error.message } }
+  return { media: (data ?? []).map(mapMediaRow), error: null }
+}
+
+/**
  * Upload único — valida, comprime (se a `kind` for de imagem), sobe pro
  * Storage e grava a linha em `media`. Se o insert falhar depois do upload
  * ter ido, desfaz o upload (evita arquivo órfão no bucket).

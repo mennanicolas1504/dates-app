@@ -379,6 +379,10 @@ export type Database = {
       is_space_member: { Args: { target_space_id: string }; Returns: boolean }
       is_space_owner: { Args: { target_space_id: string }; Returns: boolean }
       redeem_space_invite: { Args: { p_token: string }; Returns: string }
+      transfer_space_ownership: {
+        Args: { p_new_owner_id: string; p_space_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

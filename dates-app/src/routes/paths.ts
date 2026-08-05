@@ -3,6 +3,7 @@ export const paths = {
   ideias: "/ideias",
   album: "/album",
   spaceSettings: "/espaco",
+  profile: "/perfil",
 
   login: "/entrar",
   signup: "/cadastro",

@@ -12,6 +12,7 @@ import { OnboardingCreateSpacePage } from "@/pages/onboarding-create-space-page"
 import { OnboardingJoinSpacePage } from "@/pages/onboarding-join-space-page"
 import { OnboardingShareInvitePage } from "@/pages/onboarding-share-invite-page"
 import { OnboardingWelcomePage } from "@/pages/onboarding-welcome-page"
+import { ProfilePage } from "@/pages/profile-page"
 import { ResetPasswordPage } from "@/pages/reset-password-page"
 import { SignupPage } from "@/pages/signup-page"
 import { SpaceSettingsPage } from "@/pages/space-settings-page"
@@ -74,6 +75,7 @@ export const router = createBrowserRouter([
               { path: paths.ideias, element: <IdeiasPage /> },
               { path: paths.album, element: <AlbumPage /> },
               { path: paths.spaceSettings, element: <SpaceSettingsPage /> },
+              { path: paths.profile, element: <ProfilePage /> },
             ],
           },
         ],

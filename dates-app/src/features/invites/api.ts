@@ -12,7 +12,7 @@ interface RedeemInviteResult {
   error: string | null
 }
 
-async function findActiveInvite(spaceId: string): Promise<SpaceInviteResult> {
+async function findActiveInvites(spaceId: string): Promise<SpaceInviteResult & { invites: SpaceInvite[] }> {
   const { data, error } = await supabase
     .from("space_invites")
     .select("*")
@@ -20,11 +20,10 @@ async function findActiveInvite(spaceId: string): Promise<SpaceInviteResult> {
     .is("used_at", null)
     .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle()
 
-  if (error) return { invite: null, error: error.message }
-  return { invite: data ? mapSpaceInviteRow(data) : null, error: null }
+  if (error) return { invite: null, invites: [], error: error.message }
+  const invites = (data ?? []).map(mapSpaceInviteRow)
+  return { invite: invites[0] ?? null, invites, error: null }
 }
 
 async function createSpaceInvite(spaceId: string, createdById: string): Promise<SpaceInviteResult> {
@@ -52,9 +51,39 @@ export async function getOrCreateActiveInvite(
   spaceId: string,
   createdById: string,
 ): Promise<SpaceInviteResult> {
-  const { invite: existing, error: findError } = await findActiveInvite(spaceId)
+  const { invite: existing, error: findError } = await findActiveInvites(spaceId)
   if (findError) return { invite: null, error: findError }
   if (existing) return { invite: existing, error: null }
+
+  return createSpaceInvite(spaceId, createdById)
+}
+
+/**
+ * "Gerar novo convite" (Configurações do Espaço) — revoga todo convite
+ * ativo do espaço (marca `expires_at` no passado, mesma checagem que
+ * `redeem_space_invite` já usa para recusar convite expirado — nenhuma
+ * coluna nova precisa existir só para "revogado") e cria um novo. Link
+ * antigo compartilhado antes some de circulação sem exigir que alguém o
+ * tenha usado.
+ */
+export async function regenerateSpaceInvite(
+  spaceId: string,
+  createdById: string,
+): Promise<SpaceInviteResult> {
+  const { invites: active, error: findError } = await findActiveInvites(spaceId)
+  if (findError) return { invite: null, error: findError }
+
+  if (active.length > 0) {
+    const { error: revokeError } = await supabase
+      .from("space_invites")
+      .update({ expires_at: new Date().toISOString() })
+      .in(
+        "id",
+        active.map((invite) => invite.id),
+      )
+
+    if (revokeError) return { invite: null, error: revokeError.message }
+  }
 
   return createSpaceInvite(spaceId, createdById)
 }

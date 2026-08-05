@@ -26,3 +26,13 @@ export function mapSpaceRow(row: Tables<"spaces">): Space {
     ownerId: row.owner_id,
   }
 }
+
+/** Uma linha de `space_members`, já com os dados de exibição de `profiles` (ver `fetchSpaceMembers`). */
+export interface SpaceMember {
+  profileId: string
+  role: "owner" | "member"
+  /** ISO date string. */
+  joinedAt: string
+  displayName: string
+  email: string
+}
