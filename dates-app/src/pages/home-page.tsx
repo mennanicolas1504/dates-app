@@ -19,6 +19,7 @@ import {
 } from "@/features/home/select-highlights"
 import { fetchExperiencesForSpace } from "@/features/ideias/api"
 import type { Idea } from "@/features/ideias/types"
+import { PageBackground } from "@/features/personalization/components/page-background"
 import { fetchProfile } from "@/features/profile/api"
 import { toast } from "@/hooks/use-toast"
 import { useSignedMediaUrls } from "@/hooks/use-signed-media-urls"
@@ -40,6 +41,8 @@ export function HomePage() {
   const [experiences, setExperiences] = React.useState<Idea[]>([])
   const [displayName, setDisplayName] = React.useState<string>("")
   const [avatarMedia, setAvatarMedia] = React.useState<MediaRecord | null>(null)
+  const [coupleMedia, setCoupleMedia] = React.useState<MediaRecord | null>(null)
+  const [coverMedia, setCoverMedia] = React.useState<MediaRecord | null>(null)
   const [loading, setLoading] = React.useState(true)
   const [loadedKey, setLoadedKey] = React.useState<string | null>(null)
 
@@ -48,6 +51,8 @@ export function HomePage() {
     setLoadedKey(key)
     setExperiences([])
     setAvatarMedia(null)
+    setCoupleMedia(null)
+    setCoverMedia(null)
     setLoading(key !== null)
   }
 
@@ -60,7 +65,9 @@ export function HomePage() {
       fetchExperiencesForSpace(space.id),
       fetchProfile(user.id),
       listMedia("user_avatar", user.id),
-    ]).then(([experiencesResult, profileResult, avatarResult]) => {
+      listMedia("couple_photo", space.id),
+      listMedia("space_cover", space.id),
+    ]).then(([experiencesResult, profileResult, avatarResult, coupleResult, coverResult]) => {
       if (cancelled) return
 
       if (experiencesResult.error) {
@@ -72,6 +79,8 @@ export function HomePage() {
         profileResult.profile?.displayName ?? user.email?.split("@")[0] ?? "você",
       )
       setAvatarMedia(avatarResult.media[0] ?? null)
+      setCoupleMedia(coupleResult.media[0] ?? null)
+      setCoverMedia(coverResult.media[0] ?? null)
       setLoading(false)
     })
 
@@ -80,8 +89,14 @@ export function HomePage() {
     }
   }, [user, space])
 
-  const { urls: avatarUrls } = useSignedMediaUrls(avatarMedia ? [avatarMedia] : [])
-  const avatarUrl = avatarMedia ? avatarUrls.get(avatarMedia.id) : undefined
+  const personalizationMedia = React.useMemo(
+    () => [avatarMedia, coupleMedia, coverMedia].filter((item): item is MediaRecord => item !== null),
+    [avatarMedia, coupleMedia, coverMedia],
+  )
+  const { urls: personalizationUrls } = useSignedMediaUrls(personalizationMedia)
+  const avatarUrl = avatarMedia ? personalizationUrls.get(avatarMedia.id) : undefined
+  const coupleAvatarUrl = coupleMedia ? personalizationUrls.get(coupleMedia.id) : undefined
+  const coverUrl = coverMedia ? personalizationUrls.get(coverMedia.id) : undefined
 
   const memories = React.useMemo(() => experiences.filter(isMemory), [experiences])
   const nextExperience = React.useMemo(() => selectNextExperience(experiences), [experiences])
@@ -120,50 +135,58 @@ export function HomePage() {
 
   if (loading) {
     return (
-      <PageContainer className="flex flex-col gap-5">
-        <SkeletonCard className="h-20" />
-        <SkeletonCard className="h-28" />
-        <SkeletonCard className="h-40" />
-        <SkeletonCard className="h-28" />
-      </PageContainer>
+      <>
+        <PageBackground spaceId={space.id} />
+        <PageContainer className="flex flex-col gap-5">
+          <SkeletonCard className="h-20" />
+          <SkeletonCard className="h-28" />
+          <SkeletonCard className="h-40" />
+          <SkeletonCard className="h-28" />
+        </PageContainer>
+      </>
     )
   }
 
   return (
-    <PageContainer className="flex flex-col gap-5">
-      <GreetingCard
-        displayName={displayName}
-        spaceName={space.name}
-        avatarUrl={avatarUrl}
-        fallbackLabel={displayName.charAt(0).toUpperCase() || "?"}
-        delayIndex={0}
-      />
+    <>
+      <PageBackground spaceId={space.id} />
+      <PageContainer className="flex flex-col gap-5">
+        <GreetingCard
+          displayName={displayName}
+          spaceName={space.name}
+          avatarUrl={avatarUrl}
+          coupleAvatarUrl={coupleAvatarUrl}
+          coverUrl={coverUrl}
+          fallbackLabel={displayName.charAt(0).toUpperCase() || "?"}
+          delayIndex={0}
+        />
 
-      <NextExperienceCard
-        experience={nextExperience}
-        onOpen={() => navigate(paths.ideias)}
-        delayIndex={1}
-      />
+        <NextExperienceCard
+          experience={nextExperience}
+          onOpen={() => navigate(paths.ideias)}
+          delayIndex={1}
+        />
 
-      <LastMemoryCard
-        memory={recentMemory}
-        coverUrl={recentMemoryReady ? recentMemoryCoverUrl : undefined}
-        onOpen={() =>
-          recentMemory && navigate(paths.album, { state: { openMemoryId: recentMemory.id } })
-        }
-        delayIndex={2}
-      />
+        <LastMemoryCard
+          memory={recentMemory}
+          coverUrl={recentMemoryReady ? recentMemoryCoverUrl : undefined}
+          onOpen={() =>
+            recentMemory && navigate(paths.album, { state: { openMemoryId: recentMemory.id } })
+          }
+          delayIndex={2}
+        />
 
-      <FeaturedIdeaCard
-        idea={featuredIdea}
-        onOpen={() => navigate(paths.ideias)}
-        onCreate={() => navigate(paths.ideias)}
-        delayIndex={3}
-      />
+        <FeaturedIdeaCard
+          idea={featuredIdea}
+          onOpen={() => navigate(paths.ideias)}
+          onCreate={() => navigate(paths.ideias)}
+          delayIndex={3}
+        />
 
-      <StatsCard stats={stats} delayIndex={4} />
+        <StatsCard stats={stats} delayIndex={4} />
 
-      <SuggestionCard idea={suggestionIdea} onOpen={() => navigate(paths.ideias)} delayIndex={5} />
-    </PageContainer>
+        <SuggestionCard idea={suggestionIdea} onOpen={() => navigate(paths.ideias)} delayIndex={5} />
+      </PageContainer>
+    </>
   )
 }

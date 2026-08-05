@@ -10,6 +10,7 @@ import { AlbumToolbar } from "@/features/album/components/album-toolbar"
 import { MemoryGrid } from "@/features/album/components/memory-grid"
 import { MemoryViewer } from "@/features/album/components/memory-viewer"
 import type { AlbumFilter, AlbumSort, Memory } from "@/features/album/types"
+import { PageBackground } from "@/features/personalization/components/page-background"
 import { toast } from "@/hooks/use-toast"
 import { useSignedMediaUrls } from "@/hooks/use-signed-media-urls"
 import type { MediaRecord } from "@/lib/media/types"
@@ -137,7 +138,9 @@ export function AlbumPage() {
   if (!space) return null
 
   return (
-    <PageContainer className="flex flex-col gap-4">
+    <>
+      <PageBackground spaceId={space.id} />
+      <PageContainer className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
         <PageTitle>Álbum</PageTitle>
         <Typography variant="subtitle">Suas memórias vividas, uma a uma.</Typography>
@@ -171,6 +174,7 @@ export function AlbumPage() {
         index={openIndex}
         onIndexChange={setOpenIndex}
       />
-    </PageContainer>
+      </PageContainer>
+    </>
   )
 }
