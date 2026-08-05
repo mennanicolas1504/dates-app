@@ -1,3 +1,4 @@
+import * as React from "react"
 import { motion } from "framer-motion"
 import { NavLink } from "react-router-dom"
 
@@ -11,10 +12,34 @@ import type { NavItem } from "@/types/nav"
  * site com menu lateral. Fixa no rodapé, mesmas 4 rotas de sempre (ver
  * `config/nav.ts`); `env(safe-area-inset-bottom)` evita ficar por baixo da
  * barra de gestos em iPhones com notch/home indicator.
+ *
+ * A própria altura renderizada (que já inclui essa área segura) é
+ * publicada em `--bottom-nav-height` via `ResizeObserver` — é assim que
+ * `AppLayout` sabe exatamente quanto espaço reservar embaixo do conteúdo
+ * sem depender de um número chutado (ver Fase 19: o app "terminava antes
+ * da tela" porque esse número estava um pouco errado).
  */
 export function BottomNav() {
+  const navRef = React.useRef<HTMLElement>(null)
+
+  React.useEffect(() => {
+    const node = navRef.current
+    if (!node) return
+
+    const root = document.documentElement
+    const publishHeight = () => {
+      root.style.setProperty("--bottom-nav-height", `${node.offsetHeight}px`)
+    }
+
+    publishHeight()
+    const observer = new ResizeObserver(publishHeight)
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <nav
+      ref={navRef}
       className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/85 backdrop-blur-md supports-backdrop-filter:bg-background/70"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >

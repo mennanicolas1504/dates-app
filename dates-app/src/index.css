@@ -63,6 +63,9 @@
 }
 
 :root {
+    /* Fallback só pro primeiro paint, antes do ResizeObserver de
+       `BottomNav` publicar o valor real medido (ver Fase 19). */
+    --bottom-nav-height: 4.5rem;
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
