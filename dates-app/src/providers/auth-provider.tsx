@@ -33,10 +33,16 @@ interface AuthContextValue {
   signOut: () => Promise<void>
   requestPasswordReset: (email: string) => Promise<AuthActionResult>
   updatePassword: (password: string) => Promise<AuthActionResult>
-  /** Cria o espaço (spaces + space_members) e atualiza o estado local com o retorno do banco. */
-  createSpace: (name: string) => Promise<AuthActionResult>
+  /** Cria o espaço (spaces + space_members), guarda no estado local e devolve o registro criado. */
+  createSpace: (name: string) => Promise<AuthActionResult & { space: Space | null }>
   /** Atualiza o nome do espaço atual no banco e reflete o resultado localmente. */
   updateSpaceName: (name: string) => Promise<AuthActionResult>
+  /**
+   * Rebusca o espaço do usuário atual e atualiza o estado local — para
+   * quando a membership muda por um caminho que não passa por `createSpace`
+   * (ex: entrar via convite, ver `features/invites/`).
+   */
+  refreshSpace: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -140,13 +146,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
 
       createSpace: async (name) => {
-        if (!user) return { error: "Sessão inválida." }
+        if (!user) return { error: "Sessão inválida.", space: null }
 
         const { space: createdSpace, error } = await createSpaceInDb(name, user.id)
-        if (error) return { error }
+        if (error) return { error, space: null }
 
         setSpace(createdSpace)
-        return { error: null }
+        return { error: null, space: createdSpace }
       },
 
       updateSpaceName: async (name) => {
@@ -157,6 +163,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         setSpace({ ...space, name })
         return { error: null }
+      },
+
+      refreshSpace: async () => {
+        if (!user) return
+        const { space: fetchedSpace } = await fetchSpaceForUser(user.id)
+        setSpace(fetchedSpace)
       },
     }),
     [user, space, sessionLoading, spaceLoading],

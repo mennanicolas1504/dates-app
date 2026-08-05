@@ -17,8 +17,8 @@ export function SpaceChoice({ onCreateSpace, onJoinSpace }: SpaceChoiceProps) {
       />
       <ChoiceCard
         icon={Link2}
-        title="Entrar em um espaço existente"
-        description="Use um código ou link de convite."
+        title="Entrar por convite"
+        description="Peça para seu parceiro compartilhar o link com você."
         onClick={onJoinSpace}
       />
     </div>

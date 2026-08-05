@@ -5,9 +5,11 @@ import { AuthConfirmPage } from "@/pages/auth-confirm-page"
 import { ForgotPasswordPage } from "@/pages/forgot-password-page"
 import { HomePage } from "@/pages/home-page"
 import { IdeiasPage } from "@/pages/ideias-page"
+import { InvitePage } from "@/pages/invite-page"
 import { LoginPage } from "@/pages/login-page"
 import { OnboardingCreateSpacePage } from "@/pages/onboarding-create-space-page"
 import { OnboardingJoinSpacePage } from "@/pages/onboarding-join-space-page"
+import { OnboardingShareInvitePage } from "@/pages/onboarding-share-invite-page"
 import { OnboardingWelcomePage } from "@/pages/onboarding-welcome-page"
 import { ResetPasswordPage } from "@/pages/reset-password-page"
 import { SignupPage } from "@/pages/signup-page"
@@ -39,6 +41,11 @@ export const router = createBrowserRouter([
   // resolver não existe sessão ainda, então nenhum dos dois guards se aplica.
   { path: paths.authConfirm, element: <AuthConfirmPage /> },
 
+  // Fora dos dois guards de propósito: quem clica no link pode não ter
+  // conta ainda. A própria página decide o que mostrar conforme o estado
+  // de autenticação (ver `pages/invite-page.tsx`).
+  { path: paths.invite, element: <InvitePage /> },
+
   // A partir daqui, exige sessão.
   {
     element: <RequireAuth />,
@@ -51,6 +58,11 @@ export const router = createBrowserRouter([
           { path: paths.onboardingJoinSpace, element: <OnboardingJoinSpacePage /> },
         ],
       },
+
+      // Fora do RequireOnboardingIncomplete de propósito — ver comentário em
+      // `routes/paths.ts` sobre `onboardingShareInvite`.
+      { path: paths.onboardingShareInvite, element: <OnboardingShareInvitePage /> },
+
       {
         element: <RequireOnboardingComplete />,
         children: [

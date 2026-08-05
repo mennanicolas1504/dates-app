@@ -13,7 +13,7 @@ export function OnboardingCreateSpacePage() {
       description='Exemplos: "Nosso espaço", "Encontros", "Datas especiais".'
       onBack={() => navigate(paths.onboarding)}
     >
-      <CreateSpaceForm />
+      <CreateSpaceForm onCreated={() => navigate(paths.onboardingShareInvite)} />
     </OnboardingLayout>
   )
 }

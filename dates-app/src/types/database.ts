@@ -248,6 +248,61 @@ export type Database = {
         }
         Relationships: []
       }
+      space_invites: {
+        Row: {
+          created_at: string
+          created_by_id: string | null
+          expires_at: string
+          id: string
+          space_id: string
+          token: string
+          used_at: string | null
+          used_by_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by_id?: string | null
+          expires_at?: string
+          id?: string
+          space_id: string
+          token?: string
+          used_at?: string | null
+          used_by_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by_id?: string | null
+          expires_at?: string
+          id?: string
+          space_id?: string
+          token?: string
+          used_at?: string | null
+          used_by_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "space_invites_created_by_id_fkey"
+            columns: ["created_by_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_invites_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_invites_used_by_id_fkey"
+            columns: ["used_by_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       space_members: {
         Row: {
           joined_at: string
@@ -323,6 +378,7 @@ export type Database = {
     Functions: {
       is_space_member: { Args: { target_space_id: string }; Returns: boolean }
       is_space_owner: { Args: { target_space_id: string }; Returns: boolean }
+      redeem_space_invite: { Args: { p_token: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never

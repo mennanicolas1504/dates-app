@@ -1,16 +1,18 @@
 import * as React from "react"
-import { useNavigate } from "react-router-dom"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "@/hooks/use-toast"
 import { useAuth } from "@/providers/auth-provider"
-import { paths } from "@/routes/paths"
 
-export function CreateSpaceForm() {
+interface CreateSpaceFormProps {
+  /** Disparado depois da criação bem-sucedida — a página decide o próximo passo (revelar o convite). */
+  onCreated: () => void
+}
+
+export function CreateSpaceForm({ onCreated }: CreateSpaceFormProps) {
   const { createSpace } = useAuth()
-  const navigate = useNavigate()
 
   const [name, setName] = React.useState("")
   const [error, setError] = React.useState<string | null>(null)
@@ -22,16 +24,16 @@ export function CreateSpaceForm() {
 
     setLoading(true)
     setError(null)
-    const { error: createError } = await createSpace(name.trim())
+    const { error: createError, space } = await createSpace(name.trim())
     setLoading(false)
 
-    if (createError) {
-      setError(createError)
+    if (createError || !space) {
+      setError(createError ?? "Não foi possível criar o espaço.")
       return
     }
 
     toast.success({ title: "Espaço criado", description: `"${name.trim()}" está pronto.` })
-    navigate(paths.home)
+    onCreated()
   }
 
   return (
