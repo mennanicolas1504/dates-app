@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router-dom"
 
 import { AppLayout } from "@/components/layout/app-layout"
+import { AlbumPage } from "@/pages/album-page"
 import { AuthConfirmPage } from "@/pages/auth-confirm-page"
 import { ForgotPasswordPage } from "@/pages/forgot-password-page"
 import { HomePage } from "@/pages/home-page"
@@ -71,6 +72,7 @@ export const router = createBrowserRouter([
             children: [
               { path: paths.home, element: <HomePage /> },
               { path: paths.ideias, element: <IdeiasPage /> },
+              { path: paths.album, element: <AlbumPage /> },
               { path: paths.spaceSettings, element: <SpaceSettingsPage /> },
             ],
           },

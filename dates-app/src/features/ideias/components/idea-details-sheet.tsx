@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/sheet"
 import type { Idea } from "@/features/ideias/types"
 import { useSignedMediaUrls } from "@/hooks/use-signed-media-urls"
+import { formatCurrency } from "@/lib/currency"
 import { formatShortDate, formatShortDateTime } from "@/lib/date"
 import { listMedia } from "@/lib/media/api"
 import type { MediaKind, MediaRecord } from "@/lib/media/types"
@@ -24,10 +25,6 @@ interface IdeaDetailsSheetProps {
   idea: Idea | null
   open: boolean
   onOpenChange: (open: boolean) => void
-}
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
 }
 
 /**

@@ -62,6 +62,26 @@ export function SkeletonTable({ rows = 5, columns = 4, className }: SkeletonTabl
   )
 }
 
+interface SkeletonPhotoGridProps extends SkeletonBlockProps {
+  count?: number
+}
+
+/** Grade de tiles quadrados — para grades de mídia (ex: Álbum) enquanto as fotos carregam. */
+export function SkeletonPhotoGrid({ count = 10, className }: SkeletonPhotoGridProps) {
+  return (
+    <div
+      className={cn(
+        "grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5",
+        className,
+      )}
+    >
+      {Array.from({ length: count }).map((_, index) => (
+        <Skeleton key={index} className="aspect-square w-full rounded-xl" />
+      ))}
+    </div>
+  )
+}
+
 export function SkeletonPage({ className }: SkeletonBlockProps) {
   return (
     <div className={cn("flex flex-col gap-6", className)}>

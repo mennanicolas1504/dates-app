@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Eye, Image as ImageIcon } from "lucide-react
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { transition } from "@/lib/motion"
+import { resolveSwipeDirection } from "@/lib/swipe"
 import { cn } from "@/lib/utils"
 
 export interface GalleryImage {
@@ -97,8 +98,6 @@ interface GalleryPreviewProps {
   onIndexChange: (index: number | null) => void
 }
 
-const SWIPE_THRESHOLD = 60
-
 /**
  * Visualização em tela cheia — troca de foto com swipe (arrastar
  * horizontalmente, via Framer Motion, mesma lib de animação já usada em
@@ -113,8 +112,9 @@ function GalleryPreview({ images, index, onIndexChange }: GalleryPreviewProps) {
 
   function handleDragEnd(_event: PointerEvent | MouseEvent | TouchEvent, info: PanInfo) {
     if (index === null) return
-    if (info.offset.x < -SWIPE_THRESHOLD && hasNext) onIndexChange(index + 1)
-    else if (info.offset.x > SWIPE_THRESHOLD && hasPrev) onIndexChange(index - 1)
+    const direction = resolveSwipeDirection(info.offset.x)
+    if (direction === "next" && hasNext) onIndexChange(index + 1)
+    else if (direction === "prev" && hasPrev) onIndexChange(index - 1)
   }
 
   return (
