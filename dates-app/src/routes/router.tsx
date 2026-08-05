@@ -8,6 +8,7 @@ import { HomePage } from "@/pages/home-page"
 import { IdeiasPage } from "@/pages/ideias-page"
 import { InvitePage } from "@/pages/invite-page"
 import { LoginPage } from "@/pages/login-page"
+import { NotFoundPage } from "@/pages/not-found-page"
 import { NotificationsPage } from "@/pages/notifications-page"
 import { OnboardingCreateSpacePage } from "@/pages/onboarding-create-space-page"
 import { OnboardingJoinSpacePage } from "@/pages/onboarding-join-space-page"
@@ -84,4 +85,9 @@ export const router = createBrowserRouter([
       },
     ],
   },
+
+  // Catch-all — qualquer URL que não bate com nenhuma rota acima (link
+  // quebrado, digitação errada, página removida). Fora de todo guard de
+  // propósito: deve aparecer para qualquer um, logado ou não.
+  { path: "*", element: <NotFoundPage /> },
 ])

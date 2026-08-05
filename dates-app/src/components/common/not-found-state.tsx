@@ -12,10 +12,7 @@ interface NotFoundStateProps {
   className?: string
 }
 
-/**
- * Estado reutilizável para uma rota inexistente. Apenas o componente visual —
- * ainda não conectado ao router (ver relatório desta fase).
- */
+/** Estado para uma rota inexistente — ver `pages/not-found-page.tsx`, a rota catch-all (`*`) do router. */
 export function NotFoundState({
   title = "Página não encontrada",
   description = "O endereço que você tentou acessar não existe ou foi movido.",

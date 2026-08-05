@@ -39,38 +39,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      experience_images: {
-        Row: {
-          created_at: string
-          experience_id: string
-          id: string
-          position: number
-          storage_path: string
-        }
-        Insert: {
-          created_at?: string
-          experience_id: string
-          id?: string
-          position?: number
-          storage_path: string
-        }
-        Update: {
-          created_at?: string
-          experience_id?: string
-          id?: string
-          position?: number
-          storage_path?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "experience_images_experience_id_fkey"
-            columns: ["experience_id"]
-            isOneToOne: false
-            referencedRelation: "experiences"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       experiences: {
         Row: {
           actual_cost: number | null

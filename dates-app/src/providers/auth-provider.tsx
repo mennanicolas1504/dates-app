@@ -8,6 +8,7 @@ import {
   updateSpaceName as updateSpaceNameInDb,
 } from "@/features/space/api"
 import type { Space } from "@/features/space/types"
+import { translateAuthError } from "@/lib/auth-error-messages"
 import { supabase } from "@/lib/supabase"
 import { paths } from "@/routes/paths"
 
@@ -118,13 +119,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       signIn: async (email, password) => {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
-        return { error: error?.message ?? null }
+        return { error: translateAuthError(error) }
       },
 
       signUp: async (email, password) => {
         const { data, error } = await supabase.auth.signUp({ email, password })
         return {
-          error: error?.message ?? null,
+          error: translateAuthError(error),
           needsEmailConfirmation: !error && data.user !== null && data.session === null,
         }
       },
@@ -137,12 +138,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}${paths.resetPassword}`,
         })
-        return { error: error?.message ?? null }
+        return { error: translateAuthError(error) }
       },
 
       updatePassword: async (password) => {
         const { error } = await supabase.auth.updateUser({ password })
-        return { error: error?.message ?? null }
+        return { error: translateAuthError(error) }
       },
 
       createSpace: async (name) => {
