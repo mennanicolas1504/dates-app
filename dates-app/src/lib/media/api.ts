@@ -8,6 +8,7 @@ import {
   SIGNED_URL_EXPIRES_IN,
 } from "@/lib/media/signed-url-cache"
 import { buildStoragePath, resolveBucket } from "@/lib/media/storage"
+import { withTimeout } from "@/lib/media/timeout"
 import { mapMediaRow } from "@/lib/media/types"
 import type { MediaError, MediaKind, MediaRecord, UploadMediaInput } from "@/lib/media/types"
 import { validateCount, validateFile } from "@/lib/media/validate"
@@ -35,14 +36,16 @@ function unknownError(error: unknown): MediaError {
 }
 
 async function nextPosition(kind: MediaKind, resourceId: string): Promise<number> {
-  const { data } = await supabase
-    .from("media")
-    .select("position")
-    .eq("kind", kind)
-    .eq("resource_id", resourceId)
-    .order("position", { ascending: false })
-    .limit(1)
-    .maybeSingle()
+  const { data } = await withTimeout(() =>
+    supabase
+      .from("media")
+      .select("position")
+      .eq("kind", kind)
+      .eq("resource_id", resourceId)
+      .order("position", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  )
 
   return data ? data.position + 1 : 0
 }
@@ -141,13 +144,15 @@ export async function uploadMedia(input: UploadMediaInput): Promise<UploadMediaR
   })
 
   try {
-    await withRetry(() =>
-      supabase.storage
-        .from(bucket)
-        .upload(storagePath, fileToUpload, { contentType: fileToUpload.type })
-        .then(({ error }) => {
-          if (error) throw error
-        }),
+    await withTimeout(() =>
+      withRetry(() =>
+        supabase.storage
+          .from(bucket)
+          .upload(storagePath, fileToUpload, { contentType: fileToUpload.type })
+          .then(({ error }) => {
+            if (error) throw error
+          }),
+      ),
     )
   } catch (error) {
     return { media: null, error: { code: "upload_failed", message: unknownError(error).message } }
@@ -155,25 +160,35 @@ export async function uploadMedia(input: UploadMediaInput): Promise<UploadMediaR
 
   const position = await nextPosition(input.kind, input.resourceId)
 
-  const { data: row, error: insertError } = await supabase
-    .from("media")
-    .insert({
-      id: mediaId,
-      kind: input.kind,
-      space_id: input.spaceId,
-      resource_id: input.resourceId,
-      media_type: constraints.mediaType,
-      storage_bucket: bucket,
-      storage_path: storagePath,
-      mime_type: fileToUpload.type,
-      size_bytes: fileToUpload.size,
-      width,
-      height,
-      position,
-      created_by_id: input.createdById,
-    })
-    .select()
-    .single()
+  const insertRow = () =>
+    supabase
+      .from("media")
+      .insert({
+        id: mediaId,
+        kind: input.kind,
+        space_id: input.spaceId,
+        resource_id: input.resourceId,
+        media_type: constraints.mediaType,
+        storage_bucket: bucket,
+        storage_path: storagePath,
+        mime_type: fileToUpload.type,
+        size_bytes: fileToUpload.size,
+        width,
+        height,
+        position,
+        created_by_id: input.createdById,
+      })
+      .select()
+      .single()
+
+  let insertResult: Awaited<ReturnType<typeof insertRow>>
+  try {
+    insertResult = await withTimeout(insertRow)
+  } catch (error) {
+    await supabase.storage.from(bucket).remove([storagePath])
+    return { media: null, error: { code: "unknown", message: unknownError(error).message } }
+  }
+  const { data: row, error: insertError } = insertResult
 
   if (insertError || !row) {
     await supabase.storage.from(bucket).remove([storagePath])
@@ -187,11 +202,13 @@ export async function uploadMedia(input: UploadMediaInput): Promise<UploadMediaR
 }
 
 async function countExisting(kind: MediaKind, resourceId: string): Promise<number> {
-  const { count } = await supabase
-    .from("media")
-    .select("id", { count: "exact", head: true })
-    .eq("kind", kind)
-    .eq("resource_id", resourceId)
+  const { count } = await withTimeout(() =>
+    supabase
+      .from("media")
+      .select("id", { count: "exact", head: true })
+      .eq("kind", kind)
+      .eq("resource_id", resourceId),
+  )
 
   return count ?? 0
 }
@@ -227,14 +244,24 @@ export async function uploadMediaBatch(
 export async function deleteMedia(
   target: Pick<MediaRecord, "id" | "storageBucket" | "storagePath">,
 ): Promise<MediaActionResult> {
-  const { error } = await supabase.from("media").delete().eq("id", target.id)
-  if (error) return { error: { code: "unknown", message: error.message } }
+  try {
+    const { error } = await withTimeout(() => supabase.from("media").delete().eq("id", target.id))
+    if (error) return { error: { code: "unknown", message: error.message } }
+  } catch (error) {
+    return { error: { code: "unknown", message: unknownError(error).message } }
+  }
 
   // Best-effort: a linha já foi removida (é o que importa pra RLS e pra
-  // UI), então uma falha aqui não é reportada como erro — só deixa um
-  // arquivo órfão no bucket, que uma limpeza futura pode varrer (ver
-  // "Expansões futuras" no relatório).
-  await supabase.storage.from(target.storageBucket).remove([target.storagePath])
+  // UI), então uma falha (ou um timeout) aqui não é reportada como erro —
+  // só deixa um arquivo órfão no bucket, que uma limpeza futura pode varrer
+  // (ver "Expansões futuras" no relatório). O timeout ainda importa: sem
+  // ele, uma conexão travada aqui prende `deleteMedia` inteiro, mesmo a
+  // linha já tendo sido apagada com sucesso.
+  try {
+    await withTimeout(() => supabase.storage.from(target.storageBucket).remove([target.storagePath]))
+  } catch {
+    // Ignorado de propósito — best-effort, ver comentário acima.
+  }
   invalidateSignedUrl(target.storageBucket, target.storagePath)
 
   return { error: null }
@@ -263,9 +290,16 @@ export async function getSignedUrl(
   const cached = getCachedSignedUrl(bucket, path)
   if (cached) return { url: cached, error: null }
 
-  const { data, error } = await supabase.storage
-    .from(bucket)
-    .createSignedUrl(path, SIGNED_URL_EXPIRES_IN)
+  const createSignedUrlRequest = () =>
+    supabase.storage.from(bucket).createSignedUrl(path, SIGNED_URL_EXPIRES_IN)
+
+  let signResult: Awaited<ReturnType<typeof createSignedUrlRequest>>
+  try {
+    signResult = await withTimeout(createSignedUrlRequest)
+  } catch (timeoutError) {
+    return { url: null, error: { code: "unknown", message: unknownError(timeoutError).message } }
+  }
+  const { data, error } = signResult
 
   if (error || !data) {
     return { url: null, error: { code: "unknown", message: error?.message ?? "Falha ao gerar link." } }

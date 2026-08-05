@@ -127,7 +127,11 @@ export function HomePage() {
     }
   }, [recentMemory])
 
-  const { urls: recentMemoryUrls } = useSignedMediaUrls(recentMemoryMedia ? [recentMemoryMedia] : [])
+  const recentMemoryMediaArray = React.useMemo(
+    () => (recentMemoryMedia ? [recentMemoryMedia] : []),
+    [recentMemoryMedia],
+  )
+  const { urls: recentMemoryUrls } = useSignedMediaUrls(recentMemoryMediaArray)
   const recentMemoryCoverUrl = recentMemoryMedia ? recentMemoryUrls.get(recentMemoryMedia.id) : undefined
   const recentMemoryReady = recentMemory && loadedMemoryId === recentMemory.id
 

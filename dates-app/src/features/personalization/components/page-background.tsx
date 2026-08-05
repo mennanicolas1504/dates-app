@@ -44,7 +44,8 @@ export function PageBackground({ spaceId }: PageBackgroundProps) {
     }
   }, [spaceId])
 
-  const { urls } = useSignedMediaUrls(media ? [media] : [])
+  const mediaArray = React.useMemo(() => (media ? [media] : []), [media])
+  const { urls } = useSignedMediaUrls(mediaArray)
   const url = media ? urls.get(media.id) : undefined
 
   if (!url) return null

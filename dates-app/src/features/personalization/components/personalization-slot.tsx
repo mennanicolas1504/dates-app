@@ -51,7 +51,8 @@ export function PersonalizationSlot({
   const [uploading, setUploading] = React.useState(false)
   const [removing, setRemoving] = React.useState(false)
 
-  const { urls } = useSignedMediaUrls(media ? [media] : [])
+  const mediaArray = React.useMemo(() => (media ? [media] : []), [media])
+  const { urls } = useSignedMediaUrls(mediaArray)
   const url = media ? urls.get(media.id) : undefined
 
   function openPicker() {

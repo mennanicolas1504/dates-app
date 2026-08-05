@@ -13,7 +13,18 @@ const EMPTY_URLS = new Map<string, string>()
  *
  * `getSignedUrl` já cacheia por `bucket+path` (ver `signed-url-cache.ts`),
  * então reprocessar a mesma lista em renders seguintes é barato mesmo sem
- * memoizar `media` no chamador.
+ * memoizar `media` no chamador — e agora é seguro por completo: o efeito
+ * abaixo depende de `signature` (ids concatenados), não do array `media`
+ * em si. Antes dependia de `[media]` por referência; qualquer chamador que
+ * passasse um array literal novo a cada render (ex: `media ? [media] :
+ * []`, sem `useMemo`) fazia o efeito disparar de novo a cada render — que
+ * por sua vez chamava `setUrls(new Map(...))` (sempre uma referência nova)
+ * — que causava mais um render — loop infinito, silencioso, consumindo a
+ * main thread continuamente (achado real na auditoria de performance da
+ * Fase 23, medido: ~40-95 renders/s parado, sem nenhuma interação). Depender
+ * da `signature` (uma string, comparada por valor) resolve isso na raiz,
+ * pra qualquer chamador, atual ou futuro — sem exigir que cada um lembre de
+ * memoizar o array que passa.
  */
 export function useSignedMediaUrls(media: MediaRecord[]) {
   const [urls, setUrls] = React.useState<Map<string, string>>(EMPTY_URLS)
@@ -52,7 +63,8 @@ export function useSignedMediaUrls(media: MediaRecord[]) {
     return () => {
       cancelled = true
     }
-  }, [media])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- de propósito: depende de `signature` (valor), não de `media` (referência) — ver comentário acima do porquê isso é a correção, não um bug.
+  }, [signature])
 
   return { urls: media.length === 0 ? EMPTY_URLS : urls, loading: media.length === 0 ? false : loading }
 }

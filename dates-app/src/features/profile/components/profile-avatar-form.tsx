@@ -30,7 +30,8 @@ export function ProfileAvatarForm({ userId, media, fallbackLabel, onChanged }: P
   const inputRef = React.useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = React.useState(false)
 
-  const { urls } = useSignedMediaUrls(media ? [media] : [])
+  const mediaArray = React.useMemo(() => (media ? [media] : []), [media])
+  const { urls } = useSignedMediaUrls(mediaArray)
   const url = media ? urls.get(media.id) : undefined
 
   async function handleFile(file: File) {
