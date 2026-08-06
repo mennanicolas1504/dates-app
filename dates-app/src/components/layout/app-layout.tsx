@@ -19,6 +19,16 @@ import { Header } from "@/components/layout/header"
  * visível), não `min-h-full` — conteúdo mais alto que a tela ficava
  * preso dentro dessa caixa em vez de simplesmente crescer e deixar o
  * `overflow-y-auto` do `<main>` rolar até o fim de verdade.
+ *
+ * `z-0` no `<main>` (Fase 23b): sem isso, `position: relative` sozinho
+ * não cria um contexto de empilhamento (só `position` + `z-index`
+ * numérico cria). Sem contexto próprio, o `PageBackground` (`fixed
+ * -z-10`, ver esse componente) escapava até o topo da página e perdia
+ * do `bg-background` opaco desta própria div — que, por não ter
+ * contexto de empilhamento, pinta como elemento normal e cobre
+ * qualquer coisa com z-index negativo escapado. Com `z-0` aqui, o
+ * plano de fundo fica corretamente contido: atrás do conteúdo da
+ * página, na frente do fundo opaco do casco.
  */
 export function AppLayout() {
   const location = useLocation()
@@ -28,7 +38,7 @@ export function AppLayout() {
       <Header />
 
       <main
-        className="relative flex-1 overflow-y-auto"
+        className="relative z-0 flex-1 overflow-y-auto"
         style={{ paddingBottom: "var(--bottom-nav-height, 4.5rem)" }}
       >
         <AnimatePresence mode="wait" initial={false}>
